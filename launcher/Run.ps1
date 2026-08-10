@@ -66,6 +66,6 @@ $bonsaiArgs = @(
 $bonsaiArgs += "-p:StopWorkflowOnClose=true"
 $bonsaiArgs += "-p:ConfigFilePath=./default_miniscopev4_config.yml"
 
-Write-Host "Starting Miniscope GUI..."
+Write-Host "Starting Open Ephys Miniscope V4 GUI..."
 & $BonsaiExe @bonsaiArgs
 exit $LASTEXITCODE

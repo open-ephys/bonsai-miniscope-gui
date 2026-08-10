@@ -1456,7 +1456,7 @@
               <Name>DisplayTick</Name>
             </Expression>
             <Expression xsi:type="ui:VisualizerWindow">
-              <ui:Text>UCLA MiniscopeV4 GUI</ui:Text>
+              <ui:Text>Open Ephys Miniscope V4 GUI</ui:Text>
               <ui:Visible>true</ui:Visible>
               <ui:Location>
                 <ui:X>400</ui:X>

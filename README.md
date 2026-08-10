@@ -1,4 +1,4 @@
-# OpenEphys.MiniscopeV4.Gui
+# Open Ephys Miniscope V4 GUI
 
 A [Bonsai](https://bonsai-rx.org) package that provides a self-contained ImGui-based graphical interface for
 configuring and acquiring data from a UCLA Miniscope V4 head-borne miniature microscope, including control of

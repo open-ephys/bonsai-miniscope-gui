@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<Title>OpenEphys.MiniscopeV4.Gui</Title>
-		<Description>Bonsai library that contains a custom GUI for using Miniscopes.</Description>
+		<Description>Bonsai library that contains the Open Ephys Miniscope V4 GUI, a custom GUI for using Miniscopes.</Description>
 		<PackageTags>Bonsai Rx Open Ephys Miniscope Imaging Calcium Gui</PackageTags>
 		<TargetFramework>net472</TargetFramework>
 		<UseWindowsForms>true</UseWindowsForms>
