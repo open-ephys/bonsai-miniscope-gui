@@ -452,8 +452,6 @@ public class DataPanel
             int quaternionFrozenSamples = -1;
             SweepMarker eulerMarker = new(DataDisplaySettings.DefaultBufferSize);
             SweepMarker quaternionMarker = new(DataDisplaySettings.DefaultBufferSize);
-            MarkerZoom eulerMarkerZoom = default;
-            MarkerZoom quaternionMarkerZoom = default;
 
             var sourceObserver = Observer.Create<Tuple<GuiLayout, DataDisplaySettings>>(
                 value =>
@@ -878,7 +876,6 @@ public class DataPanel
                                     var fps = ConvertFrameRateV4ToFps(frameRate) ?? 0;
                                     ImPlotAxisFlags xAxisFlags = scrollable ? (axisFlags & ~ImPlotAxisFlags.AutoFit) : (axisFlags | ImPlotAxisFlags.Lock);
                                     ImPlotAxisFlags yAxisFlags = axisFlags | ImPlotAxisFlags.Lock | ImPlotAxisFlags.NoHighlight;
-                                    MarkerZoom.DisableBuiltInZoom();
                                     ImPlotFlags signalPlotFlags = scrollable
                                         ? (plotFlags & ~ImPlotFlags.NoInputs) | ImPlotFlags.NoMouseText
                                         : plotFlags | ImPlotFlags.NoMouseText;
@@ -916,10 +913,6 @@ public class DataPanel
                                                 var windowSamples = scrollable ? (eulerFrozenSamples < 0 ? (eulerFrozenSamples = numSamples) : eulerFrozenSamples) : numSamples;
                                                 var eulerWindow = PlotWindow.Create(eulerAnglesSeries, windowSamples, bufferSize, scrollable, ref eulerMarker);
                                                 var eulerXAxisLimits = GetXAxisLimits(scrollable, ref eulerWasScrollable, eulerWindow);
-                                                var eulerZoomLimits = eulerMarkerZoom.Zoom(scrollable, eulerPlotsHovered, eulerWindow.MarkerPosition);
-
-                                                if (eulerZoomLimits is (double eulerZoomMin, double eulerZoomMax))
-                                                    ImPlot.SetNextAxisLimits(ImAxis.X1, eulerZoomMin, eulerZoomMax, ImPlotCond.Always);
 
                                                 if (ImPlot.BeginPlot("##euler_angles_series", fillAvailable, signalPlotFlags))
                                                 {
@@ -942,13 +935,8 @@ public class DataPanel
                                                         PlotCircularPlotPointSeries(eulerAnglesSeries, eulerAngleLegend, eulerWindow);
                                                     }
 
-                                                    eulerMarkerZoom.Update(scrollable);
-
                                                     ImPlot.EndPlot();
                                                 }
-
-                                                if (eulerZoomLimits is (double eulerDigitalZoomMin, double eulerDigitalZoomMax))
-                                                    ImPlot.SetNextAxisLimits(ImAxis.X1, eulerDigitalZoomMin, eulerDigitalZoomMax, ImPlotCond.Always);
 
                                                 if (ImPlot.BeginPlot("##euler_digital_series", fillAvailable, signalPlotFlags))
                                                 {
@@ -1005,10 +993,6 @@ public class DataPanel
                                                 var windowSamples = scrollable ? (quaternionFrozenSamples < 0 ? (quaternionFrozenSamples = numSamples) : quaternionFrozenSamples) : numSamples;
                                                 var quaternionWindow = PlotWindow.Create(quaternionSeries, windowSamples, bufferSize, scrollable, ref quaternionMarker);
                                                 var quaternionXAxisLimits = GetXAxisLimits(scrollable, ref quaternionWasScrollable, quaternionWindow);
-                                                var quaternionZoomLimits = quaternionMarkerZoom.Zoom(scrollable, quaternionPlotsHovered, quaternionWindow.MarkerPosition);
-
-                                                if (quaternionZoomLimits is (double quaternionZoomMin, double quaternionZoomMax))
-                                                    ImPlot.SetNextAxisLimits(ImAxis.X1, quaternionZoomMin, quaternionZoomMax, ImPlotCond.Always);
 
                                                 if (ImPlot.BeginPlot("##quaternion_series", fillAvailable, signalPlotFlags))
                                                 {
@@ -1030,13 +1014,8 @@ public class DataPanel
                                                         PlotCircularPlotPointSeries(quaternionSeries, quaternionLegend, quaternionWindow);
                                                     }
 
-                                                    quaternionMarkerZoom.Update(scrollable);
-
                                                     ImPlot.EndPlot();
                                                 }
-
-                                                if (quaternionZoomLimits is (double quaternionDigitalZoomMin, double quaternionDigitalZoomMax))
-                                                    ImPlot.SetNextAxisLimits(ImAxis.X1, quaternionDigitalZoomMin, quaternionDigitalZoomMax, ImPlotCond.Always);
 
                                                 if (ImPlot.BeginPlot("##quaternion_digital_series", fillAvailable, signalPlotFlags))
                                                 {
@@ -1243,53 +1222,6 @@ public class DataPanel
                 position = Mod((int)Math.Round(position) + newSamples, samplesToPlot);
 
             return position;
-        }
-    }
-
-    struct MarkerZoom
-    {
-        const double ZoomRate = 0.1;
-        const double MinimumSpan = 2.0;
-
-        double min, max;
-        float plotLeft, plotWidth;
-        bool hasFrame;
-
-        public static void DisableBuiltInZoom() => ImPlot.GetInputMap().ZoomRate = 0f;
-
-        public void Update(bool scrollable)
-        {
-            hasFrame = scrollable;
-            if (!scrollable)
-                return;
-
-            var limits = ImPlot.GetPlotLimits();
-            min = limits.X.Min;
-            max = limits.X.Max;
-            plotLeft = ImPlot.GetPlotPos().X;
-            plotWidth = ImPlot.GetPlotSize().X;
-        }
-
-        public readonly (double Min, double Max)? Zoom(bool scrollable, bool hovered, double markerPosition)
-        {
-            if (!scrollable || !hasFrame || !hovered)
-                return null;
-
-            var io = ImGui.GetIO();
-            var wheel = io.MouseWheel;
-            var span = max - min;
-
-            // NB: Shift and the wheel step the timebase instead, which resets the limits anyway.
-            if (wheel == 0 || span <= 0 || plotWidth <= 0 || ImGui.IsKeyDown(ImGuiKey.LeftShift) || ImGui.IsKeyDown(ImGuiKey.RightShift))
-                return null;
-
-            var anchor = markerPosition >= min && markerPosition <= max
-                ? markerPosition
-                : min + (io.MousePos.X - plotLeft) / plotWidth * span;
-
-            var zoomedSpan = Math.Max(MinimumSpan, span * Math.Pow(1 + ZoomRate, -wheel));
-            var zoomedMin = anchor - (anchor - min) / span * zoomedSpan;
-            return (zoomedMin, zoomedMin + zoomedSpan);
         }
     }
 
