@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Numerics;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Xml.Serialization;
 
 namespace OpenEphys.MiniscopeV4.Gui;
@@ -32,7 +33,19 @@ public class StatusBar
     /// </remarks>
     [XmlIgnore]
     [Browsable(false)]
-    public bool AutomaticRestartTriggered { get; set; }
+    public bool AutomaticRestartTriggered
+    {
+        get => Volatile.Read(ref automaticRestartTriggered) != 0;
+        set => Volatile.Write(ref automaticRestartTriggered, value ? 1 : 0);
+    }
+
+    int automaticRestartTriggered;
+
+    /// <summary>
+    /// Consumes a pending automatic restart, if one was raised since the last call.
+    /// </summary>
+    /// <returns><see langword="true"/> if a restart was pending.</returns>
+    bool ConsumeAutomaticRestart() => Interlocked.Exchange(ref automaticRestartTriggered, 0) != 0;
 
     /// <summary>
     /// Gets or sets the commutator settings used to control the commutator serial port.
@@ -41,12 +54,24 @@ public class StatusBar
     [Browsable(false)]
     public CommutatorSettings CommutatorSettings { get; set; } = new();
 
+    bool wasAcquiring;
+
+    /// <summary>
+    /// Gets or sets the camera configuration.
+    /// </summary>
+    [XmlIgnore]
+    [Browsable(false)]
+    public CameraStatus Configuration { get; set; } = new();
+
     /// <summary>
     /// Renders the status bar controls and returns an updated <see cref="CameraStatus"/> alongside each source value.
     /// </summary>
-    /// <param name="source">A sequence of values tied to the render tick of DearImGui.</param>
+    /// <param name="source">
+    /// A sequence pairing the shared <see cref="GuiLayout"/> with whether the Miniscope is actually
+    /// acquiring frames, tied to the render tick of DearImGui.
+    /// </param>
     /// <returns>A sequence of values paired with the status bar state updated from the rendered controls.</returns>
-    public IObservable<Tuple<GuiLayout, CameraStatus>> Process(IObservable<Tuple<GuiLayout, CameraStatus>> source)
+    public IObservable<Tuple<GuiLayout, CameraStatus>> Process(IObservable<Tuple<GuiLayout, bool>> source)
     {
         double elapsedAcquisitionTime = 0;
 
@@ -55,19 +80,25 @@ public class StatusBar
             DateTime? acquisitionStart = null;
             DateTime? recordingStart = null;
 
-            var sourceObserver = Observer.Create<Tuple<GuiLayout, CameraStatus>>(value =>
+            var sourceObserver = Observer.Create<Tuple<GuiLayout, bool>>(value =>
             {
                 var guiLayout = value.Item1;
+                var acquiring = value.Item2;
 
-                var cameraStatus = value.Item2;
-                var cameraIndex = cameraStatus.CameraIndex;
-                var isConnected = cameraStatus.IsConnected;
-                var paused = cameraStatus.Paused;
+                var cameraIndex = Configuration.CameraIndex;
+                var acquisitionRequested = Configuration.AcquisitionRequested;
+                var paused = Configuration.Paused;
 
-                if (AutomaticRestartTriggered)
+                if (wasAcquiring && !acquiring)
+                    acquisitionRequested = false;
+                wasAcquiring = acquiring;
+
+                if (!acquiring)
+                    paused = false;
+
+                if (ConsumeAutomaticRestart())
                 {
                     recordingStart = null;
-                    AutomaticRestartTriggered = false;
                 }
 
                 if (ImGui.BeginTable("##statusbar", 3))
@@ -78,7 +109,9 @@ public class StatusBar
                     ImGui.Text("Index: ");
                     ImGui.SameLine();
 
-                    if (isConnected)
+                    bool indexLocked = acquisitionRequested || acquiring;
+
+                    if (indexLocked)
                         ImGui.BeginDisabled();
 
                     ImGui.SetNextItemWidth(60f * UiScale.Current);
@@ -88,37 +121,49 @@ public class StatusBar
                         Tooltip.AddLine(
                             "Index of the Miniscope to acquire from, in the order\n" +
                             "the cameras are detected (0 is the first camera).");
-                        if (isConnected)
+                        if (indexLocked)
                             Tooltip.Note("Unavailable while acquiring.");
                         Tooltip.End();
                     }
 
-                    if (isConnected)
+                    if (indexLocked)
                         ImGui.EndDisabled();
 
                     ImGui.SameLine();
-                    bool disableAcquisitionButton = !isConnected
+                    bool disableAcquisitionButton = !acquisitionRequested
                         && CommutatorSettings.AutoConnect
                         && string.IsNullOrEmpty(CommutatorSettings.PortName);
+
+                    string acquisitionLabel = acquisitionRequested
+                        ? (acquiring ? "Stop Acquisition##statusbar_btn" : "Starting...##statusbar_btn")
+                        : (acquiring ? "Stopping...##statusbar_btn" : "Start Acquisition##statusbar_btn");
+
                     var acqButtonSize = new Vector2(140f * UiScale.Current, 0f);
                     using (Palette.PushButtonColors(
-                        isConnected ? Palette.Red : Palette.Green,
-                        isConnected ? Palette.RedHovered : Palette.GreenHovered,
-                        isConnected ? Palette.RedActive : Palette.GreenActive))
+                        acquisitionRequested ? Palette.Red : Palette.Green,
+                        acquisitionRequested ? Palette.RedHovered : Palette.GreenHovered,
+                        acquisitionRequested ? Palette.RedActive : Palette.GreenActive))
                     {
                         if (disableAcquisitionButton) ImGui.BeginDisabled();
-                        if (ImGui.Button(isConnected ? "Stop Acquisition##statusbar_btn" : "Start Acquisition##statusbar_btn", acqButtonSize))
+                        if (ImGui.Button(acquisitionLabel, acqButtonSize))
                         {
-                            isConnected = !isConnected;
+                            acquisitionRequested = !acquisitionRequested;
                         }
                         if (disableAcquisitionButton) ImGui.EndDisabled();
                     }
 
                     if (Tooltip.Begin(allowWhenDisabled: true))
                     {
-                        Tooltip.AddLine(isConnected
+                        Tooltip.AddLine(acquisitionRequested
                         ? "Stop acquiring frames from the Miniscope."
                         : "Start acquiring frames from the Miniscope at the selected index.");
+
+                        if (acquisitionRequested != acquiring)
+                        {
+                            Tooltip.Note(acquisitionRequested
+                                ? "Waiting for the Miniscope to start. Click to cancel."
+                                : "Waiting for the Miniscope to stop.");
+                        }
 
                         if (disableAcquisitionButton)
                         {
@@ -135,7 +180,7 @@ public class StatusBar
                     {
                         ImGui.TableNextColumn();
 
-                        if (isConnected)
+                        if (acquiring)
                         {
                             acquisitionStart ??= DateTime.Now;
                             elapsedAcquisitionTime = (DateTime.Now - acquisitionStart.Value).TotalSeconds;
@@ -168,13 +213,13 @@ public class StatusBar
 
                     ImGui.TableNextColumn();
 
-                    if (!isConnected)
+                    if (!acquiring)
                         ImGui.BeginDisabled();
 
                     var pauseButtonSize = new Vector2(200f * UiScale.Current, 0f);
                     float avail = ImGui.GetContentRegionAvail().X;
                     ImGui.SetCursorPosX(ImGui.GetCursorPosX() + avail - pauseButtonSize.X);
-                    bool spacePressed = isConnected && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey.Space);
+                    bool spacePressed = acquiring && !ImGui.GetIO().WantTextInput && ImGui.IsKeyPressed(ImGuiKey.Space);
                     using (Palette.PushButtonColors(
                         paused ? Palette.Yellow : Palette.Gray,
                         paused ? Palette.YellowHovered : Palette.GrayHovered,
@@ -191,12 +236,12 @@ public class StatusBar
                             ? "Resume updating the live display and plots. Acquisition and recording are unaffected."
                             : "Freeze the live display and plots without stopping acquisition or recording.");
                         Tooltip.AddKeyboardShortcut("Spacebar");
-                        if (!isConnected)
+                        if (!acquiring)
                             Tooltip.Note("Unavailable while acquisition is stopped.");
                         Tooltip.End();
                     }
 
-                    if (!isConnected)
+                    if (!acquiring)
                         ImGui.EndDisabled();
 
                     ImGui.EndTable();
@@ -204,15 +249,14 @@ public class StatusBar
 
                 ImGui.Separator();
 
-                if (!isConnected)
-                    paused = false;
-
                 var updatedCameraStatus = new CameraStatus
                 {
                     CameraIndex = cameraIndex,
-                    IsConnected = isConnected,
+                    AcquisitionRequested = acquisitionRequested,
                     Paused = paused
                 };
+
+                Configuration = updatedCameraStatus;
 
                 // NB: If the ImageExpanded was requested to be toggled last frame, respect that request here at the top of the current frame.
                 if (guiLayout.ImageExpandedRequested != guiLayout.ImageExpanded)

@@ -14,6 +14,7 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml.Serialization;
 
 namespace OpenEphys.MiniscopeV4.Gui;
 
@@ -30,21 +31,31 @@ namespace OpenEphys.MiniscopeV4.Gui;
 public class SettingsPanel
 {
     /// <summary>
-    /// Gets or sets the acquisition status of the GUI.
+    /// Gets or sets a value indicating whether the Miniscope is currently acquiring frames.
     /// </summary>
+    [XmlIgnore]
     [Browsable(false)]
     public bool AcquisitionStatus { get; set; }
 
     /// <summary>
-    /// Gets or sets the recording status of the GUI.
+    /// Gets or sets a value indicating whether a recording is currently in progress.
     /// </summary>
+    [XmlIgnore]
     [Browsable(false)]
     public bool RecordingStatus { get; set; }
+
+    /// <summary>
+    /// Gets or sets the hardware configuration.
+    /// </summary>
+    [XmlIgnore]
+    [Browsable(false)]
+    public HardwareSettings Configuration { get; set; } = new();
 
     static float ExpandedWidth => 375f * UiScale.Current;
     static float CollapsedWidth => 36f * UiScale.Current;
 
     bool settingsOpen = true;
+    bool wasCommutatorConnected = false;
 
     bool EffectiveOpen(bool imageExpanded) => settingsOpen && !imageExpanded;
 
@@ -73,10 +84,13 @@ public class SettingsPanel
     /// <summary>
     /// Renders the settings sidebar and returns an updated <see cref="HardwareSettings"/> alongside the shared layout.
     /// </summary>
-    /// <param name="source">A sequence pairing the shared <see cref="GuiLayout"/> with the current <see cref="HardwareSettings"/>, tied to the render tick of DearImGui.</param>
+    /// <param name="source">
+    /// A sequence pairing the shared <see cref="GuiLayout"/> with whether the commutator serial port
+    /// is actually open, tied to the render tick of DearImGui.
+    /// </param>
     /// <param name="logSource">The shared <see cref="MiniscopeLog"/> instance (typically a <c>BehaviorSubject</c>), captured once.</param>
     /// <returns>A sequence pairing the updated <see cref="GuiLayout"/> with the settings updated from the rendered controls.</returns>
-    public unsafe IObservable<Tuple<GuiLayout, HardwareSettings, ConfigurationRequest>> Process(IObservable<Tuple<GuiLayout, HardwareSettings>> source, IObservable<MiniscopeLog> logSource)
+    public unsafe IObservable<Tuple<GuiLayout, HardwareSettings, ConfigurationRequest>> Process(IObservable<Tuple<GuiLayout, bool>> source, IObservable<MiniscopeLog> logSource)
     {
         return Observable.Create<Tuple<GuiLayout, HardwareSettings, ConfigurationRequest>>(observer =>
         {
@@ -110,9 +124,9 @@ public class SettingsPanel
                 throw new InvalidOperationException("No MiniscopeLog instance was provided.");
             }
 
-            var sourceObserver = Observer.Create<Tuple<GuiLayout, HardwareSettings>>(value =>
+            var sourceObserver = Observer.Create<Tuple<GuiLayout, bool>>(value =>
             {
-                var (layout, hardwareSettings) = value;
+                var (layout, portOpen) = value;
                 bool imageExpanded = layout.ImageExpanded;
 
                 if (!initialScanStarted)
@@ -121,17 +135,21 @@ public class SettingsPanel
                     StartPortScan();
                 }
 
-                double ledBrightness = hardwareSettings.Miniscope.LedBrightness;
-                double focus = hardwareSettings.Miniscope.Focus;
-                GainV4 sensorGain = hardwareSettings.Miniscope.SensorGain;
-                FrameRateV4 frameRate = hardwareSettings.Miniscope.FrameRate;
-                MiniscopeDaqDigitalIn ledRespectsDigitalIn = hardwareSettings.Miniscope.LedRespectsDigitalIn;
+                double ledBrightness = Configuration.Miniscope.LedBrightness;
+                double focus = Configuration.Miniscope.Focus;
+                GainV4 sensorGain = Configuration.Miniscope.SensorGain;
+                FrameRateV4 frameRate = Configuration.Miniscope.FrameRate;
+                MiniscopeDaqDigitalIn ledRespectsDigitalIn = Configuration.Miniscope.LedRespectsDigitalIn;
 
-                string portName = hardwareSettings.Commutator.PortName;
-                bool commutatorConnected = hardwareSettings.Commutator.IsConnected;
-                bool commutatorEnable = hardwareSettings.Commutator.Enable;
-                bool commutatorEnableLed = hardwareSettings.Commutator.EnableLed;
-                bool commutatorAutoConnect = hardwareSettings.Commutator.AutoConnect;
+                string portName = Configuration.Commutator.PortName;
+                bool connectionRequested = Configuration.Commutator.ConnectionRequested;
+                bool commutatorEnable = Configuration.Commutator.Enable;
+                bool commutatorEnableLed = Configuration.Commutator.EnableLed;
+                bool commutatorAutoConnect = Configuration.Commutator.AutoConnect;
+
+                if (wasCommutatorConnected && !portOpen)
+                    connectionRequested = false;
+                wasCommutatorConnected = portOpen;
 
                 ConfigurationRequestType requestType = ConfigurationRequestType.None;
                 string configFilePath = string.Empty;
@@ -191,9 +209,9 @@ public class SettingsPanel
 
                 bool commutatorsFound = portNames.Count > 0;
 
-                if (AcquisitionStatus && !wasAcquiring && commutatorAutoConnect && !commutatorConnected)
+                if (AcquisitionStatus && !wasAcquiring && commutatorAutoConnect && !connectionRequested)
                 {
-                    commutatorConnected = true;
+                    connectionRequested = true;
                 }
                 wasAcquiring = AcquisitionStatus;
 
@@ -440,7 +458,9 @@ public class SettingsPanel
                             float comboWidth = ImGui.GetContentRegionAvail().X - refreshButtonWidth - style.ItemSpacing.X;
                             ImGui.SetNextItemWidth(comboWidth);
 
-                            if (commutatorConnected || searching) ImGui.BeginDisabled();
+                            bool portBusy = connectionRequested || portOpen;
+
+                            if (portBusy || searching) ImGui.BeginDisabled();
 
                             if (ImGui.BeginCombo("##comport", commutatorsFound && portIndex >= 0 ? portNames[portIndex] : "No commutator found"))
                             {
@@ -462,7 +482,7 @@ public class SettingsPanel
                                 Tooltip.AddLine(
                                     "Select the commutator's COM port, which is the serial connection Windows assigns\n" +
                                     "to the USB cable linking it to this computer (e.g., COM1).");
-                                if (commutatorConnected)
+                                if (portBusy)
                                     Tooltip.Note("Unavailable while a commutator is connected.");
                                 if (searching)
                                     Tooltip.Note("Unavailable while searching for connected commutators.");
@@ -477,14 +497,14 @@ public class SettingsPanel
                             if (Tooltip.Begin(allowWhenDisabled: true))
                             {
                                 Tooltip.AddLine("Search for connected commutators.");
-                                if (commutatorConnected)
+                                if (portBusy)
                                     Tooltip.Note("Unavailable while the commutator is connected.");
                                 if (searching)
                                     Tooltip.Note("Unavailable while searching for connected commutators.");
                                 Tooltip.End();
                             }
 
-                            if (searching || commutatorConnected) ImGui.EndDisabled();
+                            if (portBusy || searching) ImGui.EndDisabled();
 
                             if (ImGui.BeginTable("##commutator_connect", 2, ImGuiTableFlags.SizingStretchSame))
                             {
@@ -502,28 +522,39 @@ public class SettingsPanel
                                 }
 
                                 ImGui.TableNextColumn();
-                                bool commutatorConnectButtonDisabled = (!commutatorsFound && !commutatorConnected) || searching
-                                    || (commutatorAutoConnect && AcquisitionStatus && commutatorConnected);
+
+                                bool commutatorConnectButtonDisabled = (!commutatorsFound && !connectionRequested) || searching
+                                    || (commutatorAutoConnect && AcquisitionStatus && connectionRequested);
+
+                                string connectLabel = connectionRequested
+                                    ? (portOpen ? "Disconnect##combutton" : "Connecting...##combutton")
+                                    : (portOpen ? "Disconnecting...##combutton" : "Connect##combutton");
+
                                 using (Palette.PushButtonColors(
-                                    commutatorConnected ? Palette.Red : Palette.Green,
-                                    commutatorConnected ? Palette.RedHovered : Palette.GreenHovered,
-                                    commutatorConnected ? Palette.RedActive : Palette.GreenActive))
+                                    connectionRequested ? Palette.Red : Palette.Green,
+                                    connectionRequested ? Palette.RedHovered : Palette.GreenHovered,
+                                    connectionRequested ? Palette.RedActive : Palette.GreenActive))
                                 {
 
                                     if (commutatorConnectButtonDisabled) ImGui.BeginDisabled();
 
-                                    if (ImGui.Button(commutatorConnected ? "Disconnect##combutton" : "Connect##combutton", new Vector2(-1f, 0f)))
+                                    if (ImGui.Button(connectLabel, new Vector2(-1f, 0f)))
                                     {
-                                        commutatorConnected = !commutatorConnected;
+                                        connectionRequested = !connectionRequested;
                                     }
 
                                     if (commutatorConnectButtonDisabled) ImGui.EndDisabled();
                                 }
                                 if (Tooltip.Begin(allowWhenDisabled: true))
                                 {
-                                    Tooltip.AddLine(commutatorConnected
+                                    Tooltip.AddLine(connectionRequested
                                         ? "Disconnect from the commutator."
                                         : "Connect to the selected commutator.");
+
+                                    if (connectionRequested != portOpen)
+                                        Tooltip.Note(connectionRequested
+                                            ? "Waiting for the commutator to connect. Click to cancel."
+                                            : "Waiting for the commutator to disconnect.");
 
                                     if (!commutatorsFound)
                                         Tooltip.Note("Unavailable while no commutators are found.");
@@ -531,7 +562,7 @@ public class SettingsPanel
                                     if (searching)
                                         Tooltip.Note("Unavailable while searching for connected commutators.");
 
-                                    if (commutatorAutoConnect && AcquisitionStatus && commutatorConnected)
+                                    if (commutatorAutoConnect && AcquisitionStatus && connectionRequested)
                                         Tooltip.Note(
                                             "Unavailable while acquiring and Auto Connect is true, as the commutator\n" +
                                             "is required for acquisition. Uncheck Auto Connect to disconnect without stopping\n" +
@@ -545,7 +576,7 @@ public class SettingsPanel
 
                             ImGui.Separator();
 
-                            if (!commutatorConnected) ImGui.BeginDisabled();
+                            if (!portOpen) ImGui.BeginDisabled();
 
                             if (ImGui.BeginTable("##commutator_checkboxes", 2, ImGuiTableFlags.SizingStretchSame))
                             {
@@ -554,7 +585,7 @@ public class SettingsPanel
                                 if (Tooltip.Begin(allowWhenDisabled: true))
                                 {
                                     Tooltip.AddLine("Enable the commutator motor so it counteracts cable twist as the animal rotates.");
-                                    if (!commutatorConnected)
+                                    if (!portOpen)
                                         Tooltip.Note("Unavailable while the commutator is disconnected.");
                                     Tooltip.End();
                                 }
@@ -564,7 +595,7 @@ public class SettingsPanel
                                 if (Tooltip.Begin(allowWhenDisabled: true))
                                 {
                                     Tooltip.AddLine("Turn on the commutator's indicator LED.");
-                                    if (!commutatorConnected)
+                                    if (!portOpen)
                                         Tooltip.Note("Unavailable while the commutator is disconnected.");
                                     Tooltip.End();
                                 }
@@ -572,21 +603,21 @@ public class SettingsPanel
                                 ImGui.EndTable();
                             }
 
-                            if (!commutatorConnected)
+                            if (!portOpen)
                                 ImGui.EndDisabled();
 
                             ImGui.Separator();
 
                             ImGui.TextDisabled("Status: ");
                             ImGui.SameLine();
-                            if (commutatorConnected)
+                            if (portOpen)
                             {
                                 using (Palette.PushColor(ImGuiCol.Text, Palette.GreenHovered))
-                                    ImGui.Text("Connected");
+                                    ImGui.Text(connectionRequested ? "Connected" : "Disconnecting...");
                             }
                             else
                             {
-                                ImGui.TextDisabled("Disconnected");
+                                ImGui.TextDisabled(connectionRequested ? "Connecting..." : "Disconnected");
                             }
 
                             ImGui.EndChild();
@@ -609,12 +640,14 @@ public class SettingsPanel
                     Commutator = new CommutatorSettings
                     {
                         PortName = portName,
-                        IsConnected = commutatorConnected,
+                        ConnectionRequested = connectionRequested,
                         Enable = commutatorEnable,
                         EnableLed = commutatorEnableLed,
                         AutoConnect = commutatorAutoConnect,
                     },
                 };
+
+                Configuration = updatedHardwareSettings;
 
                 var updatedConfigurationRequest = new ConfigurationRequest
                 {

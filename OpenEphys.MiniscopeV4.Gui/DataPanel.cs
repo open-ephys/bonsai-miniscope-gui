@@ -58,6 +58,13 @@ public class DataPanel
     public ImTextureRef ActiveImage { get; set; }
 
     /// <summary>
+    /// Gets or sets the display configuration.
+    /// </summary>
+    [XmlIgnore]
+    [Browsable(false)]
+    public DataDisplaySettings Configuration { get; set; } = new();
+
+    /// <summary>
     /// Gets or sets the height, in pixels, of the source images used to calculate the display size.
     /// </summary>
     public int ImageHeight { get; set; } = 100;
@@ -428,12 +435,12 @@ public class DataPanel
     /// <summary>
     /// Renders the data panel and returns the updated shared layout, display settings, and active tab.
     /// </summary>
-    /// <param name="source">A sequence pairing the shared <see cref="GuiLayout"/> with the current <see cref="DataDisplaySettings"/>, tied to the render tick of DearImGui.</param>
+    /// <param name="source">The shared <see cref="GuiLayout"/>, tied to the render tick of DearImGui.</param>
     /// <returns>
     /// The updated <see cref="GuiLayout"/> and updated <see cref="DataDisplaySettings"/> paired with the
     /// currently active <see cref="ImageTab"/>.
     /// </returns>
-    public unsafe IObservable<Tuple<GuiLayout, DataDisplaySettings, ImageTab>> Process(IObservable<Tuple<GuiLayout, DataDisplaySettings>> source)
+    public unsafe IObservable<Tuple<GuiLayout, DataDisplaySettings, ImageTab>> Process(IObservable<GuiLayout> source)
     {
         return Observable.Create<Tuple<GuiLayout, DataDisplaySettings, ImageTab>>(observer =>
         {
@@ -453,26 +460,24 @@ public class DataPanel
             SweepMarker eulerMarker = new(DataDisplaySettings.DefaultBufferSize);
             SweepMarker quaternionMarker = new(DataDisplaySettings.DefaultBufferSize);
 
-            var sourceObserver = Observer.Create<Tuple<GuiLayout, DataDisplaySettings>>(
-                value =>
+            var sourceObserver = Observer.Create<GuiLayout>(
+                layout =>
                 {
-                    var layout = value.Item1;
-                    var dataDisplaySettings = value.Item2;
-                    var bufferSize = dataDisplaySettings.BufferSize;
+                    var bufferSize = DataDisplaySettings.DefaultBufferSize;
 
-                    string overlayReferencePath = dataDisplaySettings.Overlay.ReferencePath ?? string.Empty;
-                    bool applyOverlay = dataDisplaySettings.Overlay.ApplyOverlay;
+                    var overlayReferencePath = Configuration.Overlay.ReferencePath;
+                    bool applyOverlay = Configuration.Overlay.ApplyOverlay;
                     bool captureScreenshot = false;
 
-                    var overlayReferenceColor = ConvertScalarColorToVector4(dataDisplaySettings.Overlay.ReferenceColor);
-                    var overlayLiveColor = ConvertScalarColorToVector4(dataDisplaySettings.Overlay.LiveColor);
+                    var overlayReferenceColor = ConvertScalarColorToVector4(Configuration.Overlay.ReferenceColor);
+                    var overlayLiveColor = ConvertScalarColorToVector4(Configuration.Overlay.LiveColor);
 
-                    int satThreshold = dataDisplaySettings.Saturation.Threshold;
-                    var satColor = ConvertScalarColorToVector4(dataDisplaySettings.Saturation.Color);
+                    int satThreshold = Configuration.Saturation.Threshold;
+                    var satColor = ConvertScalarColorToVector4(Configuration.Saturation.Color);
 
-                    int backgroundFrames = dataDisplaySettings.Dff.BackgroundFrames;
-                    double backgroundThreshold = dataDisplaySettings.Dff.BackgroundThreshold;
-                    int sigma = dataDisplaySettings.Dff.Sigma;
+                    int backgroundFrames = Configuration.Dff.BackgroundFrames;
+                    double backgroundThreshold = Configuration.Dff.BackgroundThreshold;
+                    int sigma = Configuration.Dff.Sigma;
 
                     var activeTab = ImageTab.None;
                     bool resetMaxProjection = false;
@@ -1100,16 +1105,18 @@ public class DataPanel
                     {
                         Saturation = new SaturationSettings { Threshold = satThreshold, Color = ConvertVector4ColorToScalar(satColor) },
                         Dff = new DffSettings { BackgroundFrames = backgroundFrames, BackgroundThreshold = backgroundThreshold, Sigma = sigma },
-                        MaxProjection = new MaxProjectionSettings { Reset = resetMaxProjection },
+                        MaxProjection = new MaxProjectionSettings { ResetRequested = resetMaxProjection },
                         Overlay = new OverlaySettings
                         {
-                            Capture = captureScreenshot,
+                            CaptureRequested = captureScreenshot,
                             ApplyOverlay = applyOverlay,
                             ReferencePath = overlayReferencePath,
                             ReferenceColor = ConvertVector4ColorToScalar(overlayReferenceColor),
                             LiveColor = ConvertVector4ColorToScalar(overlayLiveColor),
                         },
                     };
+
+                    Configuration = updatedDisplaySettings;
 
                     observer.OnNext(Tuple.Create(layout, updatedDisplaySettings, activeTab));
                 },

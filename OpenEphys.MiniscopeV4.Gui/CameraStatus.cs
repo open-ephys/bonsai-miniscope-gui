@@ -5,9 +5,11 @@ namespace OpenEphys.MiniscopeV4.Gui;
 
 partial class CameraStatus : IEquatable<CameraStatus>
 {
-    /// <summary>Whether the miniscope is currently connected.</summary>
+    /// <summary>
+    /// Whether the user has asked the Miniscope to acquire.
+    /// </summary>
     [YamlIgnore]
-    public bool IsConnected { get; set; }
+    public bool AcquisitionRequested { get; set; }
 
     /// <summary>
     /// Whether the data display is frozen. When <see langword="true"/>, the workflow stops sampling new
@@ -20,12 +22,12 @@ partial class CameraStatus : IEquatable<CameraStatus>
     public bool Equals(CameraStatus other) =>
         other is not null &&
         CameraIndex == other.CameraIndex &&
-        IsConnected == other.IsConnected &&
+        AcquisitionRequested == other.AcquisitionRequested &&
         Paused == other.Paused;
 
     /// <inheritdoc/>
     public override bool Equals(object obj) => Equals(obj as CameraStatus);
 
     /// <inheritdoc/>
-    public override int GetHashCode() => (CameraIndex, IsConnected, Paused).GetHashCode();
+    public override int GetHashCode() => (CameraIndex, AcquisitionRequested, Paused).GetHashCode();
 }

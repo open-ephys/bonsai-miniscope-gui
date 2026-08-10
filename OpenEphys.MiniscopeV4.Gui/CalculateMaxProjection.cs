@@ -34,7 +34,7 @@ public class CalculateMaxProjection
                 value =>
                 {
                     // NB: Toggle the resetPending flag to indicate that the next frame should reset the accumulator.
-                    if (value.Reset) { Volatile.Write(ref resetPending, 1); }
+                    if (value.ResetRequested) { Volatile.Write(ref resetPending, 1); }
                 },
                 observer.OnError,
                 observer.OnCompleted);
