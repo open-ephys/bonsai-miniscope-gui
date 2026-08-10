@@ -225,7 +225,7 @@
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="p1:ConfigurationRequest">
                 <p1:RequestType>AutoLoad</p1:RequestType>
-                <p1:ConfigFilePath>../../launcher/default_minscopev4_config.yml</p1:ConfigFilePath>
+                <p1:ConfigFilePath>../../launcher/default_miniscopev4_config.yml</p1:ConfigFilePath>
               </Combinator>
             </Expression>
             <Expression xsi:type="rx:BehaviorSubject">
@@ -799,7 +799,7 @@
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="p1:ConfigurationRequest">
                 <p1:RequestType>AutoSave</p1:RequestType>
-                <p1:ConfigFilePath>../../launcher/default_minscopev4_config.yml</p1:ConfigFilePath>
+                <p1:ConfigFilePath>../../launcher/default_miniscopev4_config.yml</p1:ConfigFilePath>
               </Combinator>
             </Expression>
             <Expression xsi:type="MulticastSubject">
