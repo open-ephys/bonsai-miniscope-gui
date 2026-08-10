@@ -26,7 +26,7 @@ public abstract class ImGuiMiniscopeMashupVisualizer : MashupVisualizer
 
     /// <summary>
     /// Gets an observable sequence that emits a notification whenever the
-    /// top-level Miniscope GUI visualizer window is closed.
+    /// top-level Open Ephys Miniscope V4 GUI visualizer window is closed.
     /// </summary>
     public static IObservable<Unit> Closed => closed.AsObservable();
 

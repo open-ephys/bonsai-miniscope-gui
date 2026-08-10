@@ -1,10 +1,10 @@
-; Miniscope GUI – Inno Setup 6 installer script
+; Open Ephys Miniscope V4 GUI – Inno Setup 6 installer script
 ; Requires Inno Setup 6.3+: https://jrsoftware.org/isdl.php
 ;
 ; Build locally:  iscc installer\MiniscopeGui.iss
 ; Build in CI:    see .github/workflows/installer.yml
 
-#define AppName      "UCLA Miniscope V4 GUI"
+#define AppName      "Open Ephys Miniscope V4 GUI"
 #define AppDirName   "MiniscopeV4Gui"
 #ifndef AppVersion
   #define AppVersion "0.1.0"
@@ -93,14 +93,14 @@ Name: "{autodesktop}\{#AppName}"; \
   Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Run.ps1"""; \
   WorkingDir: "{app}"; \
   IconFilename: "{app}\icon.ico"; \
-  Comment: "Launch the Miniscope GUI"
+  Comment: "Launch the Open Ephys Miniscope V4 GUI"
 
 Name: "{group}\{#AppName}"; \
   Filename: "powershell.exe"; \
   Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Run.ps1"""; \
   WorkingDir: "{app}"; \
   IconFilename: "{app}\icon.ico"; \
-  Comment: "Launch the Miniscope GUI"
+  Comment: "Launch the Open Ephys Miniscope V4 GUI"
 
 ; ---------------------------------------------------------------------------
 [Run]
