@@ -58,6 +58,13 @@ public class DataPanel
     public ImTextureRef ActiveImage { get; set; }
 
     /// <summary>
+    /// Gets or sets the display configuration.
+    /// </summary>
+    [XmlIgnore]
+    [Browsable(false)]
+    public DataDisplaySettings DataDisplaySettings { get; set; } = new();
+
+    /// <summary>
     /// Gets or sets the height, in pixels, of the source images used to calculate the display size.
     /// </summary>
     public int ImageHeight { get; set; } = 100;
@@ -428,12 +435,12 @@ public class DataPanel
     /// <summary>
     /// Renders the data panel and returns the updated shared layout, display settings, and active tab.
     /// </summary>
-    /// <param name="source">A sequence pairing the shared <see cref="GuiLayout"/> with the current <see cref="DataDisplaySettings"/>, tied to the render tick of DearImGui.</param>
+    /// <param name="source">The shared <see cref="GuiLayout"/>, tied to the render tick of DearImGui.</param>
     /// <returns>
-    /// The updated <see cref="GuiLayout"/> and updated <see cref="DataDisplaySettings"/> paired with the
+    /// The updated <see cref="GuiLayout"/> and updated <see cref="Gui.DataDisplaySettings"/> paired with the
     /// currently active <see cref="ImageTab"/>.
     /// </returns>
-    public unsafe IObservable<Tuple<GuiLayout, DataDisplaySettings, ImageTab>> Process(IObservable<Tuple<GuiLayout, DataDisplaySettings>> source)
+    public unsafe IObservable<Tuple<GuiLayout, DataDisplaySettings, ImageTab>> Process(IObservable<GuiLayout> source)
     {
         return Observable.Create<Tuple<GuiLayout, DataDisplaySettings, ImageTab>>(observer =>
         {
@@ -453,26 +460,24 @@ public class DataPanel
             SweepMarker eulerMarker = new(DataDisplaySettings.DefaultBufferSize);
             SweepMarker quaternionMarker = new(DataDisplaySettings.DefaultBufferSize);
 
-            var sourceObserver = Observer.Create<Tuple<GuiLayout, DataDisplaySettings>>(
-                value =>
+            var sourceObserver = Observer.Create<GuiLayout>(
+                layout =>
                 {
-                    var layout = value.Item1;
-                    var dataDisplaySettings = value.Item2;
-                    var bufferSize = dataDisplaySettings.BufferSize;
+                    var bufferSize = DataDisplaySettings.DefaultBufferSize;
 
-                    string overlayReferencePath = dataDisplaySettings.Overlay.ReferencePath ?? string.Empty;
-                    bool applyOverlay = dataDisplaySettings.Overlay.ApplyOverlay;
+                    var overlayReferencePath = DataDisplaySettings.Overlay.ReferencePath;
+                    bool applyOverlay = DataDisplaySettings.Overlay.ApplyOverlay;
                     bool captureScreenshot = false;
 
-                    var overlayReferenceColor = ConvertScalarColorToVector4(dataDisplaySettings.Overlay.ReferenceColor);
-                    var overlayLiveColor = ConvertScalarColorToVector4(dataDisplaySettings.Overlay.LiveColor);
+                    var overlayReferenceColor = ConvertScalarColorToVector4(DataDisplaySettings.Overlay.ReferenceColor);
+                    var overlayLiveColor = ConvertScalarColorToVector4(DataDisplaySettings.Overlay.LiveColor);
 
-                    int satThreshold = dataDisplaySettings.Saturation.Threshold;
-                    var satColor = ConvertScalarColorToVector4(dataDisplaySettings.Saturation.Color);
+                    int satThreshold = DataDisplaySettings.Saturation.Threshold;
+                    var satColor = ConvertScalarColorToVector4(DataDisplaySettings.Saturation.Color);
 
-                    int backgroundFrames = dataDisplaySettings.Dff.BackgroundFrames;
-                    double backgroundThreshold = dataDisplaySettings.Dff.BackgroundThreshold;
-                    int sigma = dataDisplaySettings.Dff.Sigma;
+                    int backgroundFrames = DataDisplaySettings.Dff.BackgroundFrames;
+                    int backgroundThreshold = DataDisplaySettings.Dff.BackgroundThreshold;
+                    int sigma = DataDisplaySettings.Dff.Sigma;
 
                     var activeTab = ImageTab.None;
                     bool resetMaxProjection = false;
@@ -515,14 +520,8 @@ public class DataPanel
                     if (screenshotButtonActive && !textInputActive && ImGui.IsKeyPressed(ImGuiKey.C))
                         SetScreenshotCapture(true);
 
-                    if (!textInputActive && ImGui.IsKeyPressed(ImGuiKey.R))
-                        SetMaxProjectionReset(true);
-
                     if (!textInputActive && ImGui.IsKeyPressed(ImGuiKey.E))
                         layout = layout with { ImageExpandedRequested = !layout.ImageExpanded };
-
-                    if (!fileMissing && !textInputActive && ImGui.IsKeyPressed(ImGuiKey.O))
-                        applyOverlay = !applyOverlay;
 
                     bool expanded = layout.ImageExpanded;
                     if (!expanded)
@@ -674,8 +673,8 @@ public class DataPanel
 
                                         ImGui.TextUnformatted("Background threshold:");
                                         ImGui.SetNextItemWidth(-1f);
-                                        double bgThreshMin = 0, bgThreshMax = 255;
-                                        ImGui.SliderScalar("##background_threshold", ImGuiDataType.Double, &backgroundThreshold, &bgThreshMin, &bgThreshMax, "%.1f", ImGuiSliderFlags.AlwaysClamp);
+                                        int bgThreshMin = 0, bgThreshMax = 255;
+                                        ImGui.SliderInt("##background_threshold", &backgroundThreshold, bgThreshMin, bgThreshMax, ImGuiSliderFlags.AlwaysClamp);
                                         Tooltip.Slider(
                                             $"Minimum background intensity [{bgThreshMin} to {bgThreshMax}] required to calculate dF/F for a pixel.");
                                         ImGui.Spacing();
@@ -703,6 +702,9 @@ public class DataPanel
                                     "Maximum projection intensity is continuously accumulated until manually reset.");
                                 if (maxProjectionTabOpen)
                                 {
+                                    if (!textInputActive && ImGui.IsKeyPressed(ImGuiKey.R))
+                                        SetMaxProjectionReset(true);
+
                                     activeTab = ImageTab.MaxProjection;
                                     RenderImageArea("##image_area_maxprojection", imageAreaSize, displaySize, ActiveImage);
                                     ImGui.SameLine();
@@ -737,6 +739,9 @@ public class DataPanel
                                     "(e.g., a previous captured image) to help align the current field of view.");
                                 if (referenceImageTabOpen)
                                 {
+                                    if (!fileMissing && !textInputActive && ImGui.IsKeyPressed(ImGuiKey.O))
+                                        applyOverlay = !applyOverlay;
+
                                     activeTab = ImageTab.Overlay;
                                     bool showImage = !string.IsNullOrEmpty(overlayReferencePath) || applyOverlay;
                                     var image = showImage ? ActiveImage : default;
@@ -748,39 +753,47 @@ public class DataPanel
                                     {
                                         ImGui.TextUnformatted("Reference Image");
 
-                                        const string selectLabel = "...";
-                                        const string browseLabel = "Browse";
-                                        var (selectWidth, browseWidth, inputWidth) = FilePanel.CalculateFileNameInputWidth(selectLabel, browseLabel);
-
-                                        ImGui.SetNextItemWidth(inputWidth);
+                                        ImGui.SetNextItemWidth(fillAvailable.X);
                                         ImGui.InputText("##overlay_path", ref overlayReferencePath, pathBufSize, ImGuiInputTextFlags.ReadOnly | ImGuiInputTextFlags.ElideLeft);
 
-                                        ImGui.SameLine();
-                                        if (ImGui.Button($"{selectLabel}##choose_screenshot", new Vector2(selectWidth, 0)))
+                                        if (ImGui.BeginTable("##overlay_buttons", 3))
                                         {
-                                            if (overlayDialogTask == null || overlayDialogTask.IsCompleted)
+                                            ImGui.TableNextColumn();
+                                            if (ImGui.Button("Select##select_screenshot", new Vector2(-1f, 0f)))
                                             {
-                                                overlayDialogTask = FileDialogHelpers.RunDialogTask(() => new OpenFileDialog
+                                                if (overlayDialogTask == null || overlayDialogTask.IsCompleted)
                                                 {
-                                                    Filter = "Images|*.png;*.tif;*.tiff;*.jpg;*.bmp|All Files|*.*",
-                                                    CheckFileExists = true,
-                                                    Multiselect = false,
-                                                    InitialDirectory = FileDialogHelpers.GetDirectory(DataPath),
-                                                    Title = "Choose a captured image to load.",
-                                                },
-                                                (dlg) => (dlg as OpenFileDialog).FileName);
+                                                    overlayDialogTask = FileDialogHelpers.RunDialogTask(() => new OpenFileDialog
+                                                    {
+                                                        Filter = "Images|*.png;*.tif;*.tiff;*.jpg;*.bmp|All Files|*.*",
+                                                        CheckFileExists = true,
+                                                        Multiselect = false,
+                                                        InitialDirectory = FileDialogHelpers.GetDirectory(DataPath),
+                                                        Title = "Choose a captured image to load.",
+                                                    },
+                                                    (dlg) => (dlg as OpenFileDialog).FileName);
+                                                }
                                             }
-                                        }
-                                        Tooltip.Describe("Choose a reference image (e.g., a previous captured image) to overlay on the live view.");
+                                            Tooltip.Describe("Choose a reference image (e.g., a previous captured image) to overlay on the live view.");
 
-                                        ImGui.SameLine();
-                                        if (ImGui.Button($"{browseLabel}##browse_screenshots", new Vector2(browseWidth, 0)))
-                                        {
-                                            var dir = FileDialogHelpers.GetDirectory(DataPath);
-                                            if (Directory.Exists(dir))
-                                                System.Diagnostics.Process.Start("explorer.exe", dir);
+                                            ImGui.TableNextColumn();
+                                            if (ImGui.Button("Clear##clear_overlay_path", new Vector2(-1f, 0f)))
+                                            {
+                                                overlayReferencePath = string.Empty;
+                                            }
+                                            Tooltip.Describe("Clears the existing reference image path.");
+
+                                            ImGui.TableNextColumn();
+                                            if (ImGui.Button("Browse##browse_screenshots", new Vector2(-1f, 0f)))
+                                            {
+                                                var dir = FileDialogHelpers.GetDirectory(DataPath);
+                                                if (Directory.Exists(dir))
+                                                    System.Diagnostics.Process.Start("explorer.exe", dir);
+                                            }
+                                            Tooltip.Describe("Open the data folder in File Explorer to browse for previous captured images.");
+
+                                            ImGui.EndTable();
                                         }
-                                        Tooltip.Describe("Open the data folder in File Explorer to browse for previous captured images.");
 
                                         if (fileMissing) ImGui.BeginDisabled();
 
@@ -790,7 +803,13 @@ public class DataPanel
                                             Tooltip.AddLine("Overlay the live image on the reference image to align the current field of view with a previous one.");
                                             Tooltip.AddKeyboardShortcut("O");
                                             if (fileMissing)
-                                                Tooltip.Note("Unavailable until a valid reference image is chosen.");
+                                            {
+                                                if (!File.Exists(DataPath))
+                                                    Tooltip.Note("Unavailable because the selected image could not be loaded from the chosen file path.");
+
+                                                else
+                                                    Tooltip.Note("Unavailable until a reference image is chosen.");
+                                            }
                                             Tooltip.End();
                                         }
 
@@ -1100,16 +1119,18 @@ public class DataPanel
                     {
                         Saturation = new SaturationSettings { Threshold = satThreshold, Color = ConvertVector4ColorToScalar(satColor) },
                         Dff = new DffSettings { BackgroundFrames = backgroundFrames, BackgroundThreshold = backgroundThreshold, Sigma = sigma },
-                        MaxProjection = new MaxProjectionSettings { Reset = resetMaxProjection },
+                        MaxProjection = new MaxProjectionSettings { ResetRequested = resetMaxProjection },
                         Overlay = new OverlaySettings
                         {
-                            Capture = captureScreenshot,
+                            CaptureRequested = captureScreenshot,
                             ApplyOverlay = applyOverlay,
                             ReferencePath = overlayReferencePath,
                             ReferenceColor = ConvertVector4ColorToScalar(overlayReferenceColor),
                             LiveColor = ConvertVector4ColorToScalar(overlayLiveColor),
                         },
                     };
+
+                    DataDisplaySettings = updatedDisplaySettings;
 
                     observer.OnNext(Tuple.Create(layout, updatedDisplaySettings, activeTab));
                 },

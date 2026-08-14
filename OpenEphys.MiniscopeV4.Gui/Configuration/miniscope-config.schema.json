@@ -166,8 +166,8 @@
         },
         "BackgroundThreshold": {
           "description": "The background threshold.",
-          "type": "number",
-          "default": 14.3
+          "type": "integer",
+          "default": 92
         },
         "Sigma": {
           "description": "The Gaussian smoothing sigma.",

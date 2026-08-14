@@ -6,15 +6,15 @@ namespace OpenEphys.MiniscopeV4.Gui;
 partial class OverlaySettings : IEquatable<OverlaySettings>
 {
     /// <summary>
-    /// Raised when the user clicks the Capture Current Image button.
+    /// Whether the user asked to capture the current image on this frame.
     /// </summary>
     [YamlIgnore]
-    public bool Capture { get; set; }
+    public bool CaptureRequested { get; set; }
 
     /// <inheritdoc/>
     public bool Equals(OverlaySettings other) =>
         other is not null &&
-        Capture == other.Capture &&
+        CaptureRequested == other.CaptureRequested &&
         ApplyOverlay == other.ApplyOverlay &&
         ReferencePath == other.ReferencePath &&
         ReferenceColor == other.ReferenceColor &&
@@ -24,5 +24,5 @@ partial class OverlaySettings : IEquatable<OverlaySettings>
     public override bool Equals(object obj) => Equals(obj as OverlaySettings);
 
     /// <inheritdoc/>
-    public override int GetHashCode() => (Capture, ApplyOverlay, ReferencePath, ReferenceColor, LiveColor).GetHashCode();
+    public override int GetHashCode() => (CaptureRequested, ApplyOverlay, ReferencePath, ReferenceColor, LiveColor).GetHashCode();
 }

@@ -17,8 +17,6 @@ namespace OpenEphys.MiniscopeV4.Gui;
 [Description("Superimposes a reference image over the live image, tinting each with its own configurable color.")]
 public class OverlayReference
 {
-    IplImage blankImage = null;
-
     /// <summary>
     /// Composites the reference image over each input frame while the overlay is enabled.
     /// </summary>
@@ -29,6 +27,7 @@ public class OverlayReference
     {
         return Observable.Create<IplImage>(observer =>
         {
+            IplImage blankImage = null;
             IplImage referenceImage = null;
             IplImage currentImage = null;
             IplImage compositeImage = null;
@@ -142,6 +141,7 @@ public class OverlayReference
                 subscription,
                 Disposable.Create(() =>
                 {
+                    blankImage?.Dispose(); blankImage = null;
                     referenceImage?.Dispose(); referenceImage = null;
                     currentImage?.Dispose(); currentImage = null;
                     compositeImage?.Dispose(); compositeImage = null;

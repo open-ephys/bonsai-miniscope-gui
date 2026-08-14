@@ -6,17 +6,17 @@ namespace OpenEphys.MiniscopeV4.Gui;
 partial class MaxProjectionSettings : IEquatable<MaxProjectionSettings>
 {
     /// <summary>
-    /// Raised when the user clicks the Reset button, to reset the accumulation.
+    /// Whether the user asked to reset the accumulation on this frame.
     /// </summary>
     [YamlIgnore]
-    public bool Reset { get; set; }
+    public bool ResetRequested { get; set; }
 
     /// <inheritdoc/>
-    public bool Equals(MaxProjectionSettings other) => other is not null && Reset == other.Reset;
+    public bool Equals(MaxProjectionSettings other) => other is not null && ResetRequested == other.ResetRequested;
 
     /// <inheritdoc/>
     public override bool Equals(object obj) => Equals(obj as MaxProjectionSettings);
 
     /// <inheritdoc/>
-    public override int GetHashCode() => Reset.GetHashCode();
+    public override int GetHashCode() => ResetRequested.GetHashCode();
 }

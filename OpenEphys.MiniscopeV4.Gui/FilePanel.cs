@@ -10,6 +10,7 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml.Serialization;
 
 namespace OpenEphys.MiniscopeV4.Gui;
 
@@ -31,9 +32,32 @@ namespace OpenEphys.MiniscopeV4.Gui;
 public class FilePanel
 {
     /// <summary>
-    /// Gets or sets the acquisition status of the GUI.
+    /// Gets or sets a value indicating whether the Miniscope is currently acquiring frames.
     /// </summary>
+    [XmlIgnore]
+    [Browsable(false)]
     public bool AcquisitionStatus { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether a segmented run has reached its total duration.
+    /// </summary>
+    [XmlIgnore]
+    [Browsable(false)]
+    public bool IsTotalDurationFinished { get; set; }
+
+    /// <summary>
+    /// Gets or sets the most recent recording error message.
+    /// </summary>
+    [XmlIgnore]
+    [Browsable(false)]
+    public string RecordingError { get; set; }
+
+    /// <summary>
+    /// Gets or sets the file settings.
+    /// </summary>
+    [XmlIgnore]
+    [Browsable(false)]
+    public FileSettings FileSettings { get; set; } = new();
 
     static readonly string[] DigitalInNames = Enum.GetNames(typeof(MiniscopeDaqDigitalIn));
     static readonly MiniscopeDaqDigitalIn[] DigitalInValues = (MiniscopeDaqDigitalIn[])Enum.GetValues(typeof(MiniscopeDaqDigitalIn));
@@ -43,53 +67,65 @@ public class FilePanel
     static readonly string RecordButtonLabelText = " (Ctrl+R)##record_button";
 
     /// <summary>
-    /// Renders the file saving and recording controls and returns an updated <see cref="FileSettings"/> alongside the shared layout.
+    /// Renders the file saving and recording controls and returns an updated <see cref="Gui.FileSettings"/> alongside the shared layout.
     /// </summary>
-    /// <param name="source">A sequence pairing the shared <see cref="GuiLayout"/> with the current <see cref="FileSettings"/>, tied to the render tick of DearImGui.</param>
+    /// <param name="source">
+    /// A sequence pairing the shared <see cref="GuiLayout"/> with whether a file is actually being
+    /// written, tied to the render tick of DearImGui.
+    /// </param>
     /// <returns>A sequence pairing the updated <see cref="GuiLayout"/> with the file settings updated from the rendered controls.</returns>
-    public IObservable<Tuple<GuiLayout, FileSettings>> Process(IObservable<Tuple<GuiLayout, FileSettings>> source)
+    public IObservable<Tuple<GuiLayout, FileSettings>> Process(IObservable<Tuple<GuiLayout, bool>> source)
     {
         return Observable.Create<Tuple<GuiLayout, FileSettings>>(observer =>
         {
+            bool wasRecording = false;
+            bool wasAcquiring = false;
+            string lastRecordingError = string.Empty;
+
             const nuint bufSize = 1024;
             string fileName = string.Empty;
             Task<string> saveDialogTask = null;
             bool shouldStartRecordingWhenCompleted = false;
 
-            bool recordRequested = false;
-            bool lastRecordButtonInput = false;
-            bool recordStateInitialized = false;
             DateTime? recordingStart = null;
 
-            var sourceObserver = Observer.Create<Tuple<GuiLayout, FileSettings>>(value =>
+            var sourceObserver = Observer.Create<Tuple<GuiLayout, bool>>(value =>
             {
                 var layout = value.Item1;
-                var fileSettings = value.Item2;
-                var recordingMode = fileSettings.RecordingMode;
+                var recording = value.Item2;
 
-                if (!recordStateInitialized)
-                {
-                    recordRequested = fileSettings.RecordButton;
-                    lastRecordButtonInput = fileSettings.RecordButton;
-                    recordStateInitialized = true;
-                }
-                if (fileSettings.RecordButton != lastRecordButtonInput)
-                {
-                    recordRequested = fileSettings.RecordButton;
-                    lastRecordButtonInput = fileSettings.RecordButton;
-                }
-
-                bool recordButton = recordRequested;
-                fileName = fileSettings.FileName;
-                PathSuffix suffix = fileSettings.Suffix;
-                int recordingDurationSeconds = fileSettings.RecordingDuration;
-                int totalDurationSeconds = fileSettings.TotalDuration;
-                var segmentMode = fileSettings.SegmentMode;
-                bool isCompressed = fileSettings.CompressVideo;
-                var triggerInput = fileSettings.TriggerInput;
+                var recordingMode = FileSettings.RecordingMode;
+                bool recordingRequested = FileSettings.RecordingRequested;
+                fileName = FileSettings.FileName;
+                PathSuffix suffix = FileSettings.Suffix;
+                int recordingDurationSeconds = FileSettings.RecordingDuration;
+                int totalDurationSeconds = FileSettings.TotalDuration;
+                var segmentMode = FileSettings.SegmentMode;
+                bool isCompressed = FileSettings.CompressVideo;
+                var triggerInput = FileSettings.TriggerInput;
                 int triggerIndex = Array.IndexOf(DigitalInValues, triggerInput);
 
-                bool recordButtonActive = AcquisitionStatus;
+                bool runFinished = segmentMode switch
+                {
+                    SegmentMode.AutoRestart => false,
+                    SegmentMode.MultipleFiles => IsTotalDurationFinished,
+                    _ => recordingMode != RecordingMode.Trigger,
+                };
+
+                if ((wasRecording && !recording && runFinished) || (wasAcquiring && !AcquisitionStatus))
+                    recordingRequested = false;
+
+                if (!ReferenceEquals(RecordingError, lastRecordingError))
+                {
+                    lastRecordingError = RecordingError;
+                    if (!string.IsNullOrEmpty(RecordingError))
+                        recordingRequested = false;
+                }
+
+                wasRecording = recording;
+                wasAcquiring = AcquisitionStatus;
+
+                bool recordButtonEnabled = AcquisitionStatus;
 
                 if (saveDialogTask != null && saveDialogTask.IsCompleted)
                 {
@@ -102,7 +138,7 @@ public class FilePanel
 
                     if (shouldStartRecordingWhenCompleted && !string.IsNullOrEmpty(fileName))
                     {
-                        recordButton = true;
+                        recordingRequested = true;
                         shouldStartRecordingWhenCompleted = false;
                     }
                 }
@@ -119,16 +155,16 @@ public class FilePanel
                     }
                     else
                     {
-                        recordButton = !recordButton;
+                        recordingRequested = !recordingRequested;
                     }
                 }
 
-                if (recordButtonActive && !ImGui.GetIO().WantTextInput && ImGui.GetIO().KeyCtrl && ImGui.IsKeyPressed(ImGuiKey.R))
+                if (recordButtonEnabled && !ImGui.GetIO().WantTextInput && ImGui.GetIO().KeyCtrl && ImGui.IsKeyPressed(ImGuiKey.R))
                     RecordButtonPressed();
 
                 if (triggerIndex < 1) triggerIndex = 1;
 
-                if (recordButton)
+                if (recordingRequested)
                 {
                     recordingStart ??= DateTime.Now;
                 }
@@ -152,7 +188,7 @@ public class FilePanel
                     var (selectWidth, browseWidth, inputWidth) = CalculateFileNameInputWidth(selectLabel, browseLabel);
                     string unavailableWhile = recordingMode == RecordingMode.Trigger ? "armed" : "recording";
 
-                    if (recordButton) ImGui.BeginDisabled();
+                    if (recordingRequested) ImGui.BeginDisabled();
 
                     ImGui.SetNextItemWidth(inputWidth);
                     ImGui.InputText("##filename", ref fileName, bufSize, ImGuiInputTextFlags.ElideLeft);
@@ -160,7 +196,7 @@ public class FilePanel
                         "The data path used to save all files: a folder plus a base filename.\n" +
                         "The selected suffix is inserted after the base filename and before the extension.\n" +
                         $"Video files get '{GenerateRecordingFileNames.ImageExtension}', data files get '{GenerateRecordingFileNames.CsvExtension}', logs get '{GenerateRecordingFileNames.LogExtension}', configuration files get '{GenerateRecordingFileNames.ConfigExtension}' appended automatically.",
-                        recordButton, unavailableWhile);
+                        recordingRequested, unavailableWhile);
                     ImGui.SameLine();
                     if (ImGui.Button($"{selectLabel}##choose_filename_button", new Vector2(selectWidth, 0)))
                     {
@@ -172,11 +208,11 @@ public class FilePanel
                     RecordModeTooltip(
                         "Specify a save location and base filename for all data\n" +
                         " produced during acquisition (e.g., video, IMU, console log).",
-                        recordButton, unavailableWhile);
+                        recordingRequested, unavailableWhile);
 
                     ImGui.SameLine();
 
-                    if (recordButton) ImGui.EndDisabled();
+                    if (recordingRequested) ImGui.EndDisabled();
 
                     if (ImGui.Button($"{browseLabel}##open_folder_button", new Vector2(browseWidth, 0)))
                     {
@@ -186,7 +222,7 @@ public class FilePanel
                     }
                     Tooltip.Describe("Open the data folder in File Explorer to browse for previously saved data files.");
 
-                    if (recordButton) ImGui.BeginDisabled();
+                    if (recordingRequested) ImGui.BeginDisabled();
 
                     if (ImGui.BeginTable("##writer_parameters", 2, ImGuiTableFlags.SizingStretchSame))
                     {
@@ -217,7 +253,7 @@ public class FilePanel
                             "Text appended to each filename to keep successive recordings unique:\n" +
                             "- FileCount adds an incrementing number.\n" +
                             "- Timestamp adds the recording's date and time.",
-                            recordButton, unavailableWhile);
+                            recordingRequested, unavailableWhile);
 
                         ImGui.TableNextColumn();
                         ImGui.SetNextItemWidth(-1f);
@@ -227,7 +263,7 @@ public class FilePanel
                             "cost of higher CPU usage during recording." +
                             "Videos are saved with the 'Y800' codec when compression is disabled,\n" +
                             "or the 'MJPG' codec when compression is enabled.",
-                            recordButton, unavailableWhile);
+                            recordingRequested, unavailableWhile);
                         ImGui.EndTable();
                     }
 
@@ -240,13 +276,13 @@ public class FilePanel
                     {
                         recordingMode = RecordingMode.Manual;
                     }
-                    RecordModeTooltip("Start and stop recording manually with the Record button.", recordButton, unavailableWhile);
+                    RecordModeTooltip("Start and stop recording manually with the Record button.", recordingRequested, unavailableWhile);
                     ImGui.SameLine();
                     if (ImGui.RadioButton("Segmented##record_mode_segmented", recordingMode == RecordingMode.Segmented))
                     {
                         recordingMode = RecordingMode.Segmented;
                     }
-                    RecordModeTooltip("Record data in segments of a fixed duration.", recordButton, unavailableWhile);
+                    RecordModeTooltip("Record data in segments of a fixed duration.", recordingRequested, unavailableWhile);
                     ImGui.SameLine();
                     if (ImGui.RadioButton("Trigger##record_mode_trigger", recordingMode == RecordingMode.Trigger))
                     {
@@ -254,8 +290,8 @@ public class FilePanel
                     }
                     RecordModeTooltip(
                         "Arm recording so a digital input controls recording.\n" +
-                        "While the selected digital input is high, data is recorded.", recordButton, unavailableWhile);
-                    if (recordButton) ImGui.EndDisabled();
+                        "While the selected digital input is high, data is recorded.", recordingRequested, unavailableWhile);
+                    if (recordingRequested) ImGui.EndDisabled();
 
                     var recordingSettingsHeight = ImGui.GetFrameHeightWithSpacing() * 3 + ImGui.GetStyle().ItemSpacing.Y * 2;
 
@@ -263,7 +299,7 @@ public class FilePanel
                     {
                         if (recordingMode == RecordingMode.Segmented)
                         {
-                            if (recordButton) ImGui.BeginDisabled();
+                            if (recordingRequested) ImGui.BeginDisabled();
 
                             if (ImGui.BeginTable("##record_duration_table", 2))
                             {
@@ -331,7 +367,7 @@ public class FilePanel
                                 }
                             }
 
-                            if (recordButton) ImGui.EndDisabled();
+                            if (recordingRequested) ImGui.EndDisabled();
                         }
                         else if (recordingMode == RecordingMode.Trigger)
                         {
@@ -339,7 +375,7 @@ public class FilePanel
                             ImGui.Text("Digital Input: ");
                             ImGui.SameLine();
                             ImGui.SetNextItemWidth(-1f);
-                            if (recordButton) ImGui.BeginDisabled();
+                            if (recordingRequested) ImGui.BeginDisabled();
                             if (ImGui.BeginCombo("##trigger_input", DigitalInNames[triggerIndex]))
                             {
                                 foreach (var val in DigitalInValues)
@@ -358,28 +394,28 @@ public class FilePanel
                             if (Tooltip.Begin(allowWhenDisabled: true))
                             {
                                 Tooltip.AddLine("Digital input that triggers recording: recording runs only while it is high.");
-                                if (recordButton) Tooltip.Note("Unavailable while armed.");
+                                if (recordingRequested) Tooltip.Note("Unavailable while armed.");
                                 Tooltip.End();
                             }
-                            if (recordButton) ImGui.EndDisabled();
+                            if (recordingRequested) ImGui.EndDisabled();
                         }
                     }
 
                     ImGui.EndChild();
 
                     using (Palette.PushButtonColors(
-                            recordButton ? Palette.Red : Palette.Green,
-                            recordButton ? Palette.RedHovered : Palette.GreenHovered,
-                            recordButton ? Palette.RedActive : Palette.GreenActive))
+                            recordingRequested ? Palette.Red : Palette.Green,
+                            recordingRequested ? Palette.RedHovered : Palette.GreenHovered,
+                            recordingRequested ? Palette.RedActive : Palette.GreenActive))
                     {
-                        Vector2 recordButtonSize = new(-1f, ImGui.GetFrameHeight() * 2);
-                        if (!recordButtonActive) ImGui.BeginDisabled();
+                        Vector2 recordingRequestedSize = new(-1f, ImGui.GetFrameHeight() * 2);
+                        if (!recordButtonEnabled) ImGui.BeginDisabled();
 
                         string recordLabel = "", tooltipLine = "";
 
                         if (recordingMode == RecordingMode.Manual || recordingMode == RecordingMode.Segmented)
                         {
-                            if (recordButton)
+                            if (recordingRequested)
                             {
                                 recordLabel = "Stop Recording" + RecordButtonLabelText;
                                 tooltipLine = "Stop the current recording.";
@@ -392,7 +428,7 @@ public class FilePanel
                         }
                         else if (recordingMode == RecordingMode.Trigger)
                         {
-                            if (recordButton)
+                            if (recordingRequested)
                             {
                                 recordLabel = "Disarm" + RecordButtonLabelText;
                                 tooltipLine = "Disarm recording.";
@@ -404,7 +440,7 @@ public class FilePanel
                             }
                         }
 
-                        if (ImGui.Button(recordLabel, recordButtonSize))
+                        if (ImGui.Button(recordLabel, recordingRequestedSize))
                         {
                             RecordButtonPressed();
                         }
@@ -413,12 +449,12 @@ public class FilePanel
                         {
                             Tooltip.AddLine(tooltipLine);
                             Tooltip.AddKeyboardShortcut("Ctrl+R");
-                            if (!recordButtonActive)
+                            if (!recordButtonEnabled)
                                 Tooltip.Note("Unavailable while acquisition is stopped.");
                             Tooltip.End();
                         }
 
-                        if (!recordButtonActive) ImGui.EndDisabled();
+                        if (!recordButtonEnabled) ImGui.EndDisabled();
                     }
 
                     ImGui.EndChild();
@@ -428,11 +464,9 @@ public class FilePanel
                 if (!layout.ImageExpanded)
                     ImGui.EndChild(); // closes the shared sidebar child opened by SettingsPanel
 
-                recordRequested = recordButton;
-
                 var updatedFileSettings = new FileSettings
                 {
-                    RecordButton = recordButton,
+                    RecordingRequested = recordingRequested,
                     RecordingMode = recordingMode,
                     CompressVideo = isCompressed,
                     FileName = fileName,
@@ -442,6 +476,8 @@ public class FilePanel
                     SegmentMode = segmentMode,
                     TriggerInput = triggerInput,
                 };
+
+                FileSettings = updatedFileSettings;
 
                 observer.OnNext(Tuple.Create(layout, updatedFileSettings));
             },
