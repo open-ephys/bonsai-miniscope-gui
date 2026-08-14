@@ -476,7 +476,7 @@ public class DataPanel
                     var satColor = ConvertScalarColorToVector4(DataDisplaySettings.Saturation.Color);
 
                     int backgroundFrames = DataDisplaySettings.Dff.BackgroundFrames;
-                    double backgroundThreshold = DataDisplaySettings.Dff.BackgroundThreshold;
+                    int backgroundThreshold = DataDisplaySettings.Dff.BackgroundThreshold;
                     int sigma = DataDisplaySettings.Dff.Sigma;
 
                     var activeTab = ImageTab.None;
@@ -679,8 +679,8 @@ public class DataPanel
 
                                         ImGui.TextUnformatted("Background threshold:");
                                         ImGui.SetNextItemWidth(-1f);
-                                        double bgThreshMin = 0, bgThreshMax = 255;
-                                        ImGui.SliderScalar("##background_threshold", ImGuiDataType.Double, &backgroundThreshold, &bgThreshMin, &bgThreshMax, "%.1f", ImGuiSliderFlags.AlwaysClamp);
+                                        int bgThreshMin = 0, bgThreshMax = 255;
+                                        ImGui.SliderInt("##background_threshold", &backgroundThreshold, bgThreshMin, bgThreshMax, ImGuiSliderFlags.AlwaysClamp);
                                         Tooltip.Slider(
                                             $"Minimum background intensity [{bgThreshMin} to {bgThreshMax}] required to calculate dF/F for a pixel.");
                                         ImGui.Spacing();
