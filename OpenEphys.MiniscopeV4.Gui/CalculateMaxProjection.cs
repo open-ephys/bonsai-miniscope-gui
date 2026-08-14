@@ -11,29 +11,29 @@ namespace OpenEphys.MiniscopeV4.Gui;
 /// <summary>
 /// Computes a running per-pixel maximum-intensity projection over the input image sequence,
 /// emitting the accumulated projection for each input frame. Emit <see langword="true"/> on the
-/// reset sequence to clear the accumulation (the next frame reseeds it).
+/// maxProjectionSettings sequence to clear the accumulation (the next frame reseeds it).
 /// </summary>
 [Combinator]
 [Description("Computes a running per-pixel maximum-intensity projection over the input image sequence.")]
 public class CalculateMaxProjection
 {
     /// <summary>
-    /// Calculates the max intensity projection continuously until a <paramref name="reset"/> value is given.
+    /// Calculates the max intensity projection continuously until a <paramref name="maxProjectionSettings"/> value is given.
     /// </summary>
     /// <param name="source">Incoming image source.</param>
-    /// <param name="reset">Incoming <see cref="MaxProjectionSettings"/> value.</param>
+    /// <param name="maxProjectionSettings">Incoming <see cref="MaxProjectionSettings"/> value.</param>
     /// <returns></returns>
-    public IObservable<IplImage> Process(IObservable<IplImage> source, IObservable<MaxProjectionSettings> reset)
+    public IObservable<IplImage> Process(IObservable<IplImage> source, IObservable<MaxProjectionSettings> maxProjectionSettings)
     {
         return Observable.Create<IplImage>(observer =>
         {
             IplImage accumulator = null;
             int resetPending = 0;
 
-            var resetSubscription = reset.Subscribe(
+            var resetSubscription = maxProjectionSettings.Subscribe(
                 value =>
                 {
-                    // NB: Toggle the resetPending flag to indicate that the next frame should reset the accumulator.
+                    // NB: Toggle the resetPending flag to indicate that the next frame should maxProjectionSettings the accumulator.
                     if (value.ResetRequested) { Volatile.Write(ref resetPending, 1); }
                 },
                 observer.OnError,

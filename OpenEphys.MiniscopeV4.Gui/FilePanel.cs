@@ -43,7 +43,7 @@ public class FilePanel
     /// </summary>
     [XmlIgnore]
     [Browsable(false)]
-    public bool TotalDurationElapsed { get; set; }
+    public bool IsTotalDurationFinished { get; set; }
 
     /// <summary>
     /// Gets or sets the most recent recording error message.
@@ -53,11 +53,11 @@ public class FilePanel
     public string RecordingError { get; set; }
 
     /// <summary>
-    /// Gets or sets the file and recording configuration.
+    /// Gets or sets the file settings.
     /// </summary>
     [XmlIgnore]
     [Browsable(false)]
-    public FileSettings Configuration { get; set; } = new();
+    public FileSettings FileSettings { get; set; } = new();
 
     static readonly string[] DigitalInNames = Enum.GetNames(typeof(MiniscopeDaqDigitalIn));
     static readonly MiniscopeDaqDigitalIn[] DigitalInValues = (MiniscopeDaqDigitalIn[])Enum.GetValues(typeof(MiniscopeDaqDigitalIn));
@@ -67,7 +67,7 @@ public class FilePanel
     static readonly string RecordButtonLabelText = " (Ctrl+R)##record_button";
 
     /// <summary>
-    /// Renders the file saving and recording controls and returns an updated <see cref="FileSettings"/> alongside the shared layout.
+    /// Renders the file saving and recording controls and returns an updated <see cref="Gui.FileSettings"/> alongside the shared layout.
     /// </summary>
     /// <param name="source">
     /// A sequence pairing the shared <see cref="GuiLayout"/> with whether a file is actually being
@@ -94,21 +94,21 @@ public class FilePanel
                 var layout = value.Item1;
                 var recording = value.Item2;
 
-                var recordingMode = Configuration.RecordingMode;
-                bool recordingRequested = Configuration.RecordingRequested;
-                fileName = Configuration.FileName;
-                PathSuffix suffix = Configuration.Suffix;
-                int recordingDurationSeconds = Configuration.RecordingDuration;
-                int totalDurationSeconds = Configuration.TotalDuration;
-                var segmentMode = Configuration.SegmentMode;
-                bool isCompressed = Configuration.CompressVideo;
-                var triggerInput = Configuration.TriggerInput;
+                var recordingMode = FileSettings.RecordingMode;
+                bool recordingRequested = FileSettings.RecordingRequested;
+                fileName = FileSettings.FileName;
+                PathSuffix suffix = FileSettings.Suffix;
+                int recordingDurationSeconds = FileSettings.RecordingDuration;
+                int totalDurationSeconds = FileSettings.TotalDuration;
+                var segmentMode = FileSettings.SegmentMode;
+                bool isCompressed = FileSettings.CompressVideo;
+                var triggerInput = FileSettings.TriggerInput;
                 int triggerIndex = Array.IndexOf(DigitalInValues, triggerInput);
 
                 bool runFinished = segmentMode switch
                 {
                     SegmentMode.AutoRestart => false,
-                    SegmentMode.MultipleFiles => TotalDurationElapsed,
+                    SegmentMode.MultipleFiles => IsTotalDurationFinished,
                     _ => recordingMode != RecordingMode.Trigger,
                 };
 
@@ -477,7 +477,7 @@ public class FilePanel
                     TriggerInput = triggerInput,
                 };
 
-                Configuration = updatedFileSettings;
+                FileSettings = updatedFileSettings;
 
                 observer.OnNext(Tuple.Create(layout, updatedFileSettings));
             },

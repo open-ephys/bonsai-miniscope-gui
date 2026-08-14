@@ -24,7 +24,7 @@ public class CaptureCurrentImage
     /// </summary>
     [XmlIgnore]
     [Browsable(false)]
-    public string DataPath { get; set; }
+    public string FileDataPath { get; set; }
 
     /// <summary>
     /// Forwards each input <see cref="UclaMiniscopeV4Frame"/> and saves the image to disk.
@@ -48,7 +48,7 @@ public class CaptureCurrentImage
             return source.Subscribe(
                 frame =>
                 {
-                    CaptureImage(frame.Image, frame.FrameNumber, DataPath, log);
+                    CaptureImage(frame.Image, frame.FrameNumber, FileDataPath, log);
 
                     observer.OnNext(frame);
                 },

@@ -6,8 +6,7 @@ namespace OpenEphys.MiniscopeV4.Gui;
 partial class FileSettings : IEquatable<FileSettings>
 {
     /// <summary>
-    /// Whether the user has asked to record. When RecordingMode is Trigger this arms recording;
-    /// otherwise it starts recording directly.
+    /// Whether the user has asked to record.
     /// </summary>
     [YamlIgnore]
     public bool RecordingRequested { get; set; }

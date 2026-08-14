@@ -19,7 +19,7 @@ using System.Xml.Serialization;
 namespace OpenEphys.MiniscopeV4.Gui;
 
 /// <summary>
-/// Renders all settings panels in a collapsible sidebar and returns an updated <see cref="HardwareSettings"/>.
+/// Renders all settings panels in a collapsible sidebar and returns an updated <see cref="Gui.HardwareSettings"/>.
 /// </summary>
 /// <remarks>
 /// Opens the shared sidebar child window but does not close it, so that <see cref="FilePanel"/> can render
@@ -49,7 +49,7 @@ public class SettingsPanel
     /// </summary>
     [XmlIgnore]
     [Browsable(false)]
-    public HardwareSettings Configuration { get; set; } = new();
+    public HardwareSettings HardwareSettings { get; set; } = new();
 
     static float ExpandedWidth => 375f * UiScale.Current;
     static float CollapsedWidth => 36f * UiScale.Current;
@@ -82,7 +82,7 @@ public class SettingsPanel
     static readonly MiniscopeDaqDigitalIn[] DigitalInValues = (MiniscopeDaqDigitalIn[])Enum.GetValues(typeof(MiniscopeDaqDigitalIn));
 
     /// <summary>
-    /// Renders the settings sidebar and returns an updated <see cref="HardwareSettings"/> alongside the shared layout.
+    /// Renders the settings sidebar and returns an updated <see cref="Gui.HardwareSettings"/> alongside the shared layout.
     /// </summary>
     /// <param name="source">
     /// A sequence pairing the shared <see cref="GuiLayout"/> with whether the commutator serial port
@@ -135,17 +135,17 @@ public class SettingsPanel
                     StartPortScan();
                 }
 
-                double ledBrightness = Configuration.Miniscope.LedBrightness;
-                double focus = Configuration.Miniscope.Focus;
-                GainV4 sensorGain = Configuration.Miniscope.SensorGain;
-                FrameRateV4 frameRate = Configuration.Miniscope.FrameRate;
-                MiniscopeDaqDigitalIn ledRespectsDigitalIn = Configuration.Miniscope.LedRespectsDigitalIn;
+                double ledBrightness = HardwareSettings.Miniscope.LedBrightness;
+                double focus = HardwareSettings.Miniscope.Focus;
+                GainV4 sensorGain = HardwareSettings.Miniscope.SensorGain;
+                FrameRateV4 frameRate = HardwareSettings.Miniscope.FrameRate;
+                MiniscopeDaqDigitalIn ledRespectsDigitalIn = HardwareSettings.Miniscope.LedRespectsDigitalIn;
 
-                string portName = Configuration.Commutator.PortName;
-                bool connectionRequested = Configuration.Commutator.ConnectionRequested;
-                bool commutatorEnable = Configuration.Commutator.Enable;
-                bool commutatorEnableLed = Configuration.Commutator.EnableLed;
-                bool commutatorAutoConnect = Configuration.Commutator.AutoConnect;
+                string portName = HardwareSettings.Commutator.PortName;
+                bool connectionRequested = HardwareSettings.Commutator.ConnectionRequested;
+                bool commutatorEnable = HardwareSettings.Commutator.Enable;
+                bool commutatorEnableLed = HardwareSettings.Commutator.EnableLed;
+                bool commutatorAutoConnect = HardwareSettings.Commutator.AutoConnect;
 
                 if (wasCommutatorConnected && !portOpen)
                     connectionRequested = false;
@@ -220,11 +220,15 @@ public class SettingsPanel
                 {
                     if (commutatorsFound)
                     {
+                        log.Warning($"Could not find a commutator at {portName}, switching to the first discovered commutator at {portNames[0]}.\n" +
+                            $"Ensure that the correct commutator is connected before refreshing the list of commutators.");
                         portIndex = 0;
                         portName = portNames[0];
                     }
                     else if (!string.IsNullOrEmpty(portName))
                     {
+                        log.Warning($"Could not find a commutator at {portName}.\n" +
+                            $"Ensure that the correct commutator is connected before refreshing the list of commutators.");
                         portName = "";
                     }
                 }
@@ -647,7 +651,7 @@ public class SettingsPanel
                     },
                 };
 
-                Configuration = updatedHardwareSettings;
+                HardwareSettings = updatedHardwareSettings;
 
                 var updatedConfigurationRequest = new ConfigurationRequest
                 {

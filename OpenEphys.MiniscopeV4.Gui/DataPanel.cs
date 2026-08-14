@@ -62,7 +62,7 @@ public class DataPanel
     /// </summary>
     [XmlIgnore]
     [Browsable(false)]
-    public DataDisplaySettings Configuration { get; set; } = new();
+    public DataDisplaySettings DataDisplaySettings { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the height, in pixels, of the source images used to calculate the display size.
@@ -437,7 +437,7 @@ public class DataPanel
     /// </summary>
     /// <param name="source">The shared <see cref="GuiLayout"/>, tied to the render tick of DearImGui.</param>
     /// <returns>
-    /// The updated <see cref="GuiLayout"/> and updated <see cref="DataDisplaySettings"/> paired with the
+    /// The updated <see cref="GuiLayout"/> and updated <see cref="Gui.DataDisplaySettings"/> paired with the
     /// currently active <see cref="ImageTab"/>.
     /// </returns>
     public unsafe IObservable<Tuple<GuiLayout, DataDisplaySettings, ImageTab>> Process(IObservable<GuiLayout> source)
@@ -465,19 +465,19 @@ public class DataPanel
                 {
                     var bufferSize = DataDisplaySettings.DefaultBufferSize;
 
-                    var overlayReferencePath = Configuration.Overlay.ReferencePath;
-                    bool applyOverlay = Configuration.Overlay.ApplyOverlay;
+                    var overlayReferencePath = DataDisplaySettings.Overlay.ReferencePath;
+                    bool applyOverlay = DataDisplaySettings.Overlay.ApplyOverlay;
                     bool captureScreenshot = false;
 
-                    var overlayReferenceColor = ConvertScalarColorToVector4(Configuration.Overlay.ReferenceColor);
-                    var overlayLiveColor = ConvertScalarColorToVector4(Configuration.Overlay.LiveColor);
+                    var overlayReferenceColor = ConvertScalarColorToVector4(DataDisplaySettings.Overlay.ReferenceColor);
+                    var overlayLiveColor = ConvertScalarColorToVector4(DataDisplaySettings.Overlay.LiveColor);
 
-                    int satThreshold = Configuration.Saturation.Threshold;
-                    var satColor = ConvertScalarColorToVector4(Configuration.Saturation.Color);
+                    int satThreshold = DataDisplaySettings.Saturation.Threshold;
+                    var satColor = ConvertScalarColorToVector4(DataDisplaySettings.Saturation.Color);
 
-                    int backgroundFrames = Configuration.Dff.BackgroundFrames;
-                    double backgroundThreshold = Configuration.Dff.BackgroundThreshold;
-                    int sigma = Configuration.Dff.Sigma;
+                    int backgroundFrames = DataDisplaySettings.Dff.BackgroundFrames;
+                    double backgroundThreshold = DataDisplaySettings.Dff.BackgroundThreshold;
+                    int sigma = DataDisplaySettings.Dff.Sigma;
 
                     var activeTab = ImageTab.None;
                     bool resetMaxProjection = false;
@@ -1116,7 +1116,7 @@ public class DataPanel
                         },
                     };
 
-                    Configuration = updatedDisplaySettings;
+                    DataDisplaySettings = updatedDisplaySettings;
 
                     observer.OnNext(Tuple.Create(layout, updatedDisplaySettings, activeTab));
                 },

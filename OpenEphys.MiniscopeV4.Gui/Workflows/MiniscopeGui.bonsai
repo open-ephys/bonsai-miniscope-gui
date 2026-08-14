@@ -43,7 +43,7 @@
               </Combinator>
             </Expression>
             <Expression xsi:type="rx:BehaviorSubject">
-              <Name>Status</Name>
+              <Name>CameraStatus</Name>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="p1:MiniscopeSettings">
@@ -55,7 +55,7 @@
               </Combinator>
             </Expression>
             <Expression xsi:type="rx:BehaviorSubject">
-              <Name>Miniscope</Name>
+              <Name>MiniscopeSettings</Name>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="p1:CommutatorSettings">
@@ -67,7 +67,7 @@
               </Combinator>
             </Expression>
             <Expression xsi:type="rx:BehaviorSubject">
-              <Name>Commutator</Name>
+              <Name>CommutatorSettings</Name>
             </Expression>
             <Expression xsi:type="PropertySource" TypeArguments="p1:SaturationSettings,p2:Scalar">
               <MemberName>Color</MemberName>
@@ -149,7 +149,7 @@
               <Combinator xsi:type="p1:DataDisplaySettings" />
             </Expression>
             <Expression xsi:type="rx:BehaviorSubject">
-              <Name>DataDisplay</Name>
+              <Name>DataDisplaySettings</Name>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="p1:FileSettings">
@@ -165,7 +165,7 @@
               </Combinator>
             </Expression>
             <Expression xsi:type="rx:BehaviorSubject">
-              <Name>File</Name>
+              <Name>FileSettings</Name>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="BooleanProperty">
@@ -173,13 +173,7 @@
               </Combinator>
             </Expression>
             <Expression xsi:type="rx:BehaviorSubject">
-              <Name>Recording</Name>
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="StringProperty" />
-            </Expression>
-            <Expression xsi:type="rx:BehaviorSubject">
-              <Name>CommutatorStatus</Name>
+              <Name>IsRecording</Name>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="StringProperty" />
@@ -237,7 +231,7 @@
               </Combinator>
             </Expression>
             <Expression xsi:type="rx:BehaviorSubject">
-              <Name>TotalDurationElapsed</Name>
+              <Name>IsTotalDurationFinished</Name>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="IntProperty">
@@ -253,7 +247,7 @@
               </Combinator>
             </Expression>
             <Expression xsi:type="rx:BehaviorSubject">
-              <Name>Acquiring</Name>
+              <Name>IsAcquiring</Name>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="BooleanProperty">
@@ -268,6 +262,9 @@
             </Expression>
             <Expression xsi:type="rx:BehaviorSubject">
               <Name>CommutatorError</Name>
+            </Expression>
+            <Expression xsi:type="rx:BehaviorSubject" TypeArguments="p3:UclaMiniscopeV4Frame">
+              <rx:Name>MiniscopeV4Frame</rx:Name>
             </Expression>
           </Nodes>
           <Edges>
@@ -295,16 +292,15 @@
             <Edge From="30" To="31" Label="Source1" />
             <Edge From="32" To="33" Label="Source1" />
             <Edge From="34" To="35" Label="Source1" />
-            <Edge From="36" To="37" Label="Source1" />
+            <Edge From="35" To="36" Label="Source1" />
             <Edge From="37" To="38" Label="Source1" />
             <Edge From="39" To="40" Label="Source1" />
-            <Edge From="41" To="42" Label="Source1" />
+            <Edge From="40" To="41" Label="Source1" />
             <Edge From="42" To="43" Label="Source1" />
             <Edge From="44" To="45" Label="Source1" />
             <Edge From="46" To="47" Label="Source1" />
             <Edge From="48" To="49" Label="Source1" />
             <Edge From="50" To="51" Label="Source1" />
-            <Edge From="52" To="53" Label="Source1" />
           </Edges>
         </Workflow>
       </Expression>
@@ -313,7 +309,7 @@
         <Workflow>
           <Nodes>
             <Expression xsi:type="SubscribeSubject">
-              <Name>Status</Name>
+              <Name>CameraStatus</Name>
             </Expression>
             <Expression xsi:type="MemberSelector">
               <Selector>AcquisitionRequested</Selector>
@@ -357,10 +353,10 @@
               </Combinator>
             </Expression>
             <Expression xsi:type="MulticastSubject">
-              <Name>Acquiring</Name>
+              <Name>IsAcquiring</Name>
             </Expression>
             <Expression xsi:type="SubscribeSubject">
-              <Name>Status</Name>
+              <Name>CameraStatus</Name>
             </Expression>
             <Expression xsi:type="MemberSelector">
               <Selector>CameraIndex</Selector>
@@ -393,11 +389,58 @@
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="p1:LogInfo" />
                   </Expression>
+                  <Expression xsi:type="GroupWorkflow">
+                    <Name>Calculate Dropped Frames</Name>
+                    <Workflow>
+                      <Nodes>
+                        <Expression xsi:type="SubscribeSubject">
+                          <Name>MiniscopeV4Frame</Name>
+                        </Expression>
+                        <Expression xsi:type="Combinator">
+                          <Combinator xsi:type="rx:Skip">
+                            <rx:Count>1</rx:Count>
+                          </Combinator>
+                        </Expression>
+                        <Expression xsi:type="MemberSelector">
+                          <Selector>FrameNumber</Selector>
+                        </Expression>
+                        <Expression xsi:type="Combinator">
+                          <Combinator xsi:type="rx:Skip">
+                            <rx:Count>1</rx:Count>
+                          </Combinator>
+                        </Expression>
+                        <Expression xsi:type="Combinator">
+                          <Combinator xsi:type="rx:Zip" />
+                        </Expression>
+                        <Expression xsi:type="scr:ExpressionTransform">
+                          <scr:Expression>it.Item2 - it.Item1 - 1</scr:Expression>
+                        </Expression>
+                        <Expression xsi:type="rx:Accumulate" />
+                        <Expression xsi:type="Combinator">
+                          <Combinator xsi:type="rx:DistinctUntilChanged" />
+                        </Expression>
+                        <Expression xsi:type="MulticastSubject">
+                          <Name>DroppedFrames</Name>
+                        </Expression>
+                      </Nodes>
+                      <Edges>
+                        <Edge From="0" To="1" Label="Source1" />
+                        <Edge From="1" To="2" Label="Source1" />
+                        <Edge From="2" To="3" Label="Source1" />
+                        <Edge From="2" To="4" Label="Source1" />
+                        <Edge From="3" To="4" Label="Source2" />
+                        <Edge From="4" To="5" Label="Source1" />
+                        <Edge From="5" To="6" Label="Source1" />
+                        <Edge From="6" To="7" Label="Source1" />
+                        <Edge From="7" To="8" Label="Source1" />
+                      </Edges>
+                    </Workflow>
+                  </Expression>
                   <Expression xsi:type="ExternalizedMapping">
                     <Property Name="Index" />
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Miniscope</Name>
+                    <Name>MiniscopeSettings</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>LedBrightness</Selector>
@@ -442,15 +485,15 @@
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="p3:UclaMiniscopeV4">
                       <p3:Index>0</p3:Index>
-                      <p3:LedBrightness>0</p3:LedBrightness>
-                      <p3:Focus>0</p3:Focus>
-                      <p3:SensorGain>Low</p3:SensorGain>
-                      <p3:FramesPerSecond>Fps30</p3:FramesPerSecond>
+                      <p3:LedBrightness>76.6</p3:LedBrightness>
+                      <p3:Focus>54.3</p3:Focus>
+                      <p3:SensorGain>High</p3:SensorGain>
+                      <p3:FramesPerSecond>Fps25</p3:FramesPerSecond>
                       <p3:LedRespectsDigitalIn>None</p3:LedRespectsDigitalIn>
                     </Combinator>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Acquiring</Name>
+                    <Name>IsAcquiring</Name>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="rx:DistinctUntilChanged" />
@@ -528,47 +571,47 @@
                   <Edge From="1" To="3" Label="Source1" />
                   <Edge From="2" To="3" Label="Source2" />
                   <Edge From="3" To="4" Label="Source1" />
-                  <Edge From="5" To="17" Label="Source1" />
-                  <Edge From="6" To="7" Label="Source1" />
-                  <Edge From="6" To="9" Label="Source1" />
-                  <Edge From="6" To="11" Label="Source1" />
-                  <Edge From="6" To="13" Label="Source1" />
-                  <Edge From="6" To="15" Label="Source1" />
+                  <Edge From="6" To="18" Label="Source1" />
                   <Edge From="7" To="8" Label="Source1" />
-                  <Edge From="8" To="17" Label="Source2" />
-                  <Edge From="9" To="10" Label="Source1" />
-                  <Edge From="10" To="17" Label="Source3" />
-                  <Edge From="11" To="12" Label="Source1" />
-                  <Edge From="12" To="17" Label="Source4" />
-                  <Edge From="13" To="14" Label="Source1" />
-                  <Edge From="14" To="17" Label="Source5" />
-                  <Edge From="15" To="16" Label="Source1" />
-                  <Edge From="16" To="17" Label="Source6" />
-                  <Edge From="17" To="26" Label="Source1" />
-                  <Edge From="18" To="19" Label="Source1" />
+                  <Edge From="7" To="10" Label="Source1" />
+                  <Edge From="7" To="12" Label="Source1" />
+                  <Edge From="7" To="14" Label="Source1" />
+                  <Edge From="7" To="16" Label="Source1" />
+                  <Edge From="8" To="9" Label="Source1" />
+                  <Edge From="9" To="18" Label="Source2" />
+                  <Edge From="10" To="11" Label="Source1" />
+                  <Edge From="11" To="18" Label="Source3" />
+                  <Edge From="12" To="13" Label="Source1" />
+                  <Edge From="13" To="18" Label="Source4" />
+                  <Edge From="14" To="15" Label="Source1" />
+                  <Edge From="15" To="18" Label="Source5" />
+                  <Edge From="16" To="17" Label="Source1" />
+                  <Edge From="17" To="18" Label="Source6" />
+                  <Edge From="18" To="27" Label="Source1" />
                   <Edge From="19" To="20" Label="Source1" />
-                  <Edge From="20" To="25" Label="Source1" />
-                  <Edge From="21" To="22" Label="Source1" />
+                  <Edge From="20" To="21" Label="Source1" />
+                  <Edge From="21" To="26" Label="Source1" />
                   <Edge From="22" To="23" Label="Source1" />
                   <Edge From="23" To="24" Label="Source1" />
-                  <Edge From="24" To="25" Label="Source2" />
+                  <Edge From="24" To="25" Label="Source1" />
                   <Edge From="25" To="26" Label="Source2" />
-                  <Edge From="26" To="27" Label="Source1" />
+                  <Edge From="26" To="27" Label="Source2" />
                   <Edge From="27" To="28" Label="Source1" />
-                  <Edge From="27" To="32" Label="Source1" />
                   <Edge From="28" To="29" Label="Source1" />
+                  <Edge From="28" To="33" Label="Source1" />
                   <Edge From="29" To="30" Label="Source1" />
                   <Edge From="30" To="31" Label="Source1" />
-                  <Edge From="32" To="33" Label="Source1" />
+                  <Edge From="31" To="32" Label="Source1" />
                   <Edge From="33" To="34" Label="Source1" />
+                  <Edge From="34" To="35" Label="Source1" />
                 </Edges>
               </Workflow>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="rx:Repeat" />
             </Expression>
-            <Expression xsi:type="rx:BehaviorSubject">
-              <Name>Frame</Name>
+            <Expression xsi:type="MulticastSubject">
+              <Name>MiniscopeV4Frame</Name>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
             <Expression xsi:type="GroupWorkflow">
@@ -576,7 +619,7 @@
               <Workflow>
                 <Nodes>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Acquiring</Name>
+                    <Name>IsAcquiring</Name>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="rx:DistinctUntilChanged" />
@@ -643,7 +686,7 @@
                           </PropertyMappings>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Status</Name>
+                          <Name>CameraStatus</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>Paused</Selector>
@@ -675,7 +718,7 @@
                           </Combinator>
                         </Expression>
                         <Expression xsi:type="MulticastSubject">
-                          <Name>Status</Name>
+                          <Name>CameraStatus</Name>
                         </Expression>
                         <Expression xsi:type="WorkflowOutput" />
                       </Nodes>
@@ -702,7 +745,7 @@
                     </Combinator>
                   </Expression>
                   <Expression xsi:type="MulticastSubject">
-                    <Name>Acquiring</Name>
+                    <Name>IsAcquiring</Name>
                   </Expression>
                 </Nodes>
                 <Edges>
@@ -719,7 +762,7 @@
               <Workflow>
                 <Nodes>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Frame</Name>
+                    <Name>MiniscopeV4Frame</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>FrameNumber</Selector>
@@ -749,7 +792,7 @@
               <Workflow>
                 <Nodes>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Status</Name>
+                    <Name>CameraStatus</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>AcquisitionRequested</Selector>
@@ -771,7 +814,7 @@
                     </Workflow>
                   </Expression>
                   <Expression xsi:type="MulticastSubject">
-                    <Name>Acquiring</Name>
+                    <Name>IsAcquiring</Name>
                   </Expression>
                 </Nodes>
                 <Edges>
@@ -786,7 +829,7 @@
               <Workflow>
                 <Nodes>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Acquiring</Name>
+                    <Name>IsAcquiring</Name>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="rx:DistinctUntilChanged" />
@@ -833,52 +876,11 @@
               </Workflow>
             </Expression>
             <Expression xsi:type="GroupWorkflow">
-              <Name>Calculate Dropped Frames</Name>
-              <Workflow>
-                <Nodes>
-                  <Expression xsi:type="SubscribeSubject">
-                    <Name>Frame</Name>
-                  </Expression>
-                  <Expression xsi:type="MemberSelector">
-                    <Selector>FrameNumber</Selector>
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="rx:Skip">
-                      <rx:Count>1</rx:Count>
-                    </Combinator>
-                  </Expression>
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="rx:Zip" />
-                  </Expression>
-                  <Expression xsi:type="scr:ExpressionTransform">
-                    <scr:Expression>it.Item2 - it.Item1 - 1</scr:Expression>
-                  </Expression>
-                  <Expression xsi:type="rx:Accumulate" />
-                  <Expression xsi:type="Combinator">
-                    <Combinator xsi:type="rx:DistinctUntilChanged" />
-                  </Expression>
-                  <Expression xsi:type="MulticastSubject">
-                    <Name>DroppedFrames</Name>
-                  </Expression>
-                </Nodes>
-                <Edges>
-                  <Edge From="0" To="1" Label="Source1" />
-                  <Edge From="1" To="2" Label="Source1" />
-                  <Edge From="1" To="3" Label="Source1" />
-                  <Edge From="2" To="3" Label="Source2" />
-                  <Edge From="3" To="4" Label="Source1" />
-                  <Edge From="4" To="5" Label="Source1" />
-                  <Edge From="5" To="6" Label="Source1" />
-                  <Edge From="6" To="7" Label="Source1" />
-                </Edges>
-              </Workflow>
-            </Expression>
-            <Expression xsi:type="GroupWorkflow">
               <Name>Calculate Average Frame Rate</Name>
               <Workflow>
                 <Nodes>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Frame</Name>
+                    <Name>MiniscopeV4Frame</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>HardwareTime</Selector>
@@ -890,7 +892,7 @@
                     </Combinator>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Acquiring</Name>
+                    <Name>IsAcquiring</Name>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="rx:CombineLatest" />
@@ -1028,7 +1030,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Acquiring</Name>
+                          <Name>IsAcquiring</Name>
                         </Expression>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="rx:WithLatestFrom" />
@@ -1072,7 +1074,7 @@
                     </Combinator>
                   </Expression>
                   <Expression xsi:type="MulticastSubject">
-                    <Name>Status</Name>
+                    <Name>CameraStatus</Name>
                   </Expression>
                   <Expression xsi:type="WorkflowOutput" />
                   <Expression xsi:type="GroupWorkflow">
@@ -1083,7 +1085,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Acquiring</Name>
+                          <Name>IsAcquiring</Name>
                         </Expression>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="rx:WithLatestFrom" />
@@ -1106,7 +1108,7 @@
                     </Workflow>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Status</Name>
+                    <Name>CameraStatus</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>CameraIndex</Selector>
@@ -1169,7 +1171,7 @@
                     <Selector>Miniscope</Selector>
                   </Expression>
                   <Expression xsi:type="MulticastSubject">
-                    <Name>Miniscope</Name>
+                    <Name>MiniscopeSettings</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>Commutator</Selector>
@@ -1235,7 +1237,7 @@
                     </Workflow>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Commutator</Name>
+                    <Name>CommutatorSettings</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>PortName</Selector>
@@ -1301,14 +1303,14 @@
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="p1:CommutatorSettings">
                             <p1:ConnectionRequested>false</p1:ConnectionRequested>
-                            <p1:PortName />
-                            <p1:Enable>false</p1:Enable>
+                            <p1:PortName>COM1</p1:PortName>
+                            <p1:Enable>true</p1:Enable>
                             <p1:EnableLed>true</p1:EnableLed>
                             <p1:AutoConnect>false</p1:AutoConnect>
                           </Combinator>
                         </Expression>
                         <Expression xsi:type="MulticastSubject">
-                          <Name>Commutator</Name>
+                          <Name>CommutatorSettings</Name>
                         </Expression>
                         <Expression xsi:type="WorkflowOutput" />
                       </Nodes>
@@ -1385,7 +1387,7 @@
                     <Selector>Display</Selector>
                   </Expression>
                   <Expression xsi:type="MulticastSubject">
-                    <Name>DataDisplay</Name>
+                    <Name>DataDisplaySettings</Name>
                   </Expression>
                   <Expression xsi:type="WorkflowOutput" />
                 </Nodes>
@@ -1414,7 +1416,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Recording</Name>
+                          <Name>IsRecording</Name>
                         </Expression>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="rx:WithLatestFrom" />
@@ -1437,7 +1439,7 @@
                     </Workflow>
                   </Expression>
                   <Expression xsi:type="MulticastSubject">
-                    <Name>File</Name>
+                    <Name>FileSettings</Name>
                   </Expression>
                   <Expression xsi:type="WorkflowOutput" />
                   <Expression xsi:type="GroupWorkflow">
@@ -1448,7 +1450,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Recording</Name>
+                          <Name>IsRecording</Name>
                         </Expression>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="rx:WithLatestFrom" />
@@ -1555,7 +1557,7 @@
               <Name>GenerateHardwareSettings</Name>
             </Expression>
             <Expression xsi:type="SubscribeSubject">
-              <Name>Miniscope</Name>
+              <Name>MiniscopeSettings</Name>
             </Expression>
             <Expression xsi:type="PropertyMapping">
               <PropertyMappings>
@@ -1563,7 +1565,7 @@
               </PropertyMappings>
             </Expression>
             <Expression xsi:type="SubscribeSubject">
-              <Name>Commutator</Name>
+              <Name>CommutatorSettings</Name>
             </Expression>
             <Expression xsi:type="PropertyMapping">
               <PropertyMappings>
@@ -1579,7 +1581,7 @@
               </PropertyMappings>
             </Expression>
             <Expression xsi:type="SubscribeSubject">
-              <Name>Status</Name>
+              <Name>CameraStatus</Name>
             </Expression>
             <Expression xsi:type="PropertyMapping">
               <PropertyMappings>
@@ -1587,7 +1589,7 @@
               </PropertyMappings>
             </Expression>
             <Expression xsi:type="SubscribeSubject">
-              <Name>DataDisplay</Name>
+              <Name>DataDisplaySettings</Name>
             </Expression>
             <Expression xsi:type="PropertyMapping">
               <PropertyMappings>
@@ -1595,7 +1597,7 @@
               </PropertyMappings>
             </Expression>
             <Expression xsi:type="SubscribeSubject">
-              <Name>File</Name>
+              <Name>FileSettings</Name>
             </Expression>
             <Expression xsi:type="PropertyMapping">
               <PropertyMappings>
@@ -1652,7 +1654,7 @@
               <Workflow>
                 <Nodes>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Status</Name>
+                    <Name>CameraStatus</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>Paused</Selector>
@@ -1703,13 +1705,13 @@
                     <Selector>Item2</Selector>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Acquiring</Name>
+                    <Name>IsAcquiring</Name>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="rx:WithLatestFrom" />
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Recording</Name>
+                    <Name>IsRecording</Name>
                   </Expression>
                   <Expression xsi:type="PropertyMapping">
                     <PropertyMappings>
@@ -1725,7 +1727,7 @@
                     </PropertyMappings>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Commutator</Name>
+                    <Name>CommutatorSettings</Name>
                   </Expression>
                   <Expression xsi:type="PropertyMapping">
                     <PropertyMappings>
@@ -1733,11 +1735,11 @@
                     </PropertyMappings>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Status</Name>
+                    <Name>CameraStatus</Name>
                   </Expression>
                   <Expression xsi:type="PropertyMapping">
                     <PropertyMappings>
-                      <Property Name="Configuration" />
+                      <Property Name="CameraStatus" />
                     </PropertyMappings>
                   </Expression>
                   <Expression xsi:type="Combinator">
@@ -1754,7 +1756,7 @@
                     <Combinator xsi:type="rx:DistinctUntilChanged" />
                   </Expression>
                   <Expression xsi:type="MulticastSubject">
-                    <Name>Status</Name>
+                    <Name>CameraStatus</Name>
                   </Expression>
                 </Nodes>
                 <Edges>
@@ -1797,7 +1799,7 @@
                     <Name>MiniscopeLog</Name>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Acquiring</Name>
+                    <Name>IsAcquiring</Name>
                   </Expression>
                   <Expression xsi:type="PropertyMapping">
                     <PropertyMappings>
@@ -1805,7 +1807,7 @@
                     </PropertyMappings>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Recording</Name>
+                    <Name>IsRecording</Name>
                   </Expression>
                   <Expression xsi:type="PropertyMapping">
                     <PropertyMappings>
@@ -1813,7 +1815,7 @@
                     </PropertyMappings>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Miniscope</Name>
+                    <Name>MiniscopeSettings</Name>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="rx:DistinctUntilChanged" />
@@ -1824,7 +1826,7 @@
                     </Combinator>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Commutator</Name>
+                    <Name>CommutatorSettings</Name>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="rx:DistinctUntilChanged" />
@@ -1841,7 +1843,7 @@
                     <Name>UpdateHardwareSettings</Name>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Miniscope</Name>
+                    <Name>MiniscopeSettings</Name>
                   </Expression>
                   <Expression xsi:type="imviz:SampleOnNewFrame">
                     <Name>UpdateHardwareSettings</Name>
@@ -1852,7 +1854,7 @@
                     </PropertyMappings>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Commutator</Name>
+                    <Name>CommutatorSettings</Name>
                   </Expression>
                   <Expression xsi:type="imviz:SampleOnNewFrame">
                     <Name>UpdateHardwareSettings</Name>
@@ -1867,7 +1869,7 @@
                   </Expression>
                   <Expression xsi:type="PropertyMapping">
                     <PropertyMappings>
-                      <Property Name="Configuration" />
+                      <Property Name="HardwareSettings" />
                     </PropertyMappings>
                   </Expression>
                   <Expression xsi:type="Combinator">
@@ -1887,7 +1889,7 @@
                     <Combinator xsi:type="rx:DistinctUntilChanged" />
                   </Expression>
                   <Expression xsi:type="MulticastSubject">
-                    <Name>Miniscope</Name>
+                    <Name>MiniscopeSettings</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>Commutator</Selector>
@@ -1896,7 +1898,7 @@
                     <Combinator xsi:type="rx:DistinctUntilChanged" />
                   </Expression>
                   <Expression xsi:type="MulticastSubject">
-                    <Name>Commutator</Name>
+                    <Name>CommutatorSettings</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>Item3</Selector>
@@ -1994,13 +1996,13 @@
                     <Name>Source1</Name>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Recording</Name>
+                    <Name>IsRecording</Name>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="rx:WithLatestFrom" />
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Acquiring</Name>
+                    <Name>IsAcquiring</Name>
                   </Expression>
                   <Expression xsi:type="PropertyMapping">
                     <PropertyMappings>
@@ -2008,19 +2010,19 @@
                     </PropertyMappings>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>File</Name>
+                    <Name>FileSettings</Name>
                   </Expression>
                   <Expression xsi:type="PropertyMapping">
                     <PropertyMappings>
-                      <Property Name="Configuration" />
+                      <Property Name="FileSettings" />
                     </PropertyMappings>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>TotalDurationElapsed</Name>
+                    <Name>IsTotalDurationFinished</Name>
                   </Expression>
                   <Expression xsi:type="PropertyMapping">
                     <PropertyMappings>
-                      <Property Name="TotalDurationElapsed" />
+                      <Property Name="IsTotalDurationFinished" />
                     </PropertyMappings>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
@@ -2045,14 +2047,14 @@
                     <Combinator xsi:type="rx:DistinctUntilChanged" />
                   </Expression>
                   <Expression xsi:type="MulticastSubject">
-                    <Name>File</Name>
+                    <Name>FileSettings</Name>
                   </Expression>
                   <Expression xsi:type="GroupWorkflow">
                     <Name>Set Total Time</Name>
                     <Workflow>
                       <Nodes>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="rx:DistinctUntilChanged" />
@@ -2124,7 +2126,7 @@
                           </Workflow>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>TotalDuration</Selector>
@@ -2196,7 +2198,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Frame</Name>
+                          <Name>MiniscopeV4Frame</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>Image</Selector>
@@ -2232,7 +2234,7 @@
                                       <Workflow>
                                         <Nodes>
                                           <Expression xsi:type="SubscribeSubject">
-                                            <Name>Status</Name>
+                                            <Name>CameraStatus</Name>
                                           </Expression>
                                           <Expression xsi:type="MemberSelector">
                                             <Selector>Paused</Selector>
@@ -2380,7 +2382,7 @@
                                       <Name>Source1</Name>
                                     </Expression>
                                     <Expression xsi:type="SubscribeSubject">
-                                      <Name>DataDisplay</Name>
+                                      <Name>DataDisplaySettings</Name>
                                     </Expression>
                                     <Expression xsi:type="MemberSelector">
                                       <Selector>Dff</Selector>
@@ -2411,9 +2413,9 @@
                                     </Expression>
                                     <Expression xsi:type="Combinator">
                                       <Combinator xsi:type="p3:DeltaFOverF">
-                                        <p3:BackgroundFrames>100</p3:BackgroundFrames>
-                                        <p3:BackgroundThreshold>92</p3:BackgroundThreshold>
-                                        <p3:Sigma>3</p3:Sigma>
+                                        <p3:BackgroundFrames>2</p3:BackgroundFrames>
+                                        <p3:BackgroundThreshold>218.6</p3:BackgroundThreshold>
+                                        <p3:Sigma>5</p3:Sigma>
                                       </Combinator>
                                     </Expression>
                                     <Expression xsi:type="WorkflowOutput" />
@@ -2452,7 +2454,7 @@
                                       <Workflow>
                                         <Nodes>
                                           <Expression xsi:type="SubscribeSubject">
-                                            <Name>Status</Name>
+                                            <Name>CameraStatus</Name>
                                           </Expression>
                                           <Expression xsi:type="MemberSelector">
                                             <Selector>Paused</Selector>
@@ -2601,7 +2603,7 @@
                                       <Name>Source1</Name>
                                     </Expression>
                                     <Expression xsi:type="SubscribeSubject">
-                                      <Name>DataDisplay</Name>
+                                      <Name>DataDisplaySettings</Name>
                                     </Expression>
                                     <Expression xsi:type="MemberSelector">
                                       <Selector>Saturation</Selector>
@@ -2616,7 +2618,7 @@
                                     </Expression>
                                     <Expression xsi:type="Combinator">
                                       <Combinator xsi:type="cv:Threshold">
-                                        <cv:ThresholdValue>160</cv:ThresholdValue>
+                                        <cv:ThresholdValue>59</cv:ThresholdValue>
                                         <cv:MaxValue>255</cv:MaxValue>
                                         <cv:ThresholdType>Binary</cv:ThresholdType>
                                       </Combinator>
@@ -2647,8 +2649,8 @@
                                         <cv:Channels>3</cv:Channels>
                                         <cv:Color>
                                           <cv:Val0>0</cv:Val0>
-                                          <cv:Val1>0</cv:Val1>
-                                          <cv:Val2>100</cv:Val2>
+                                          <cv:Val1>255</cv:Val1>
+                                          <cv:Val2>25.822807312011719</cv:Val2>
                                           <cv:Val3>0</cv:Val3>
                                         </cv:Color>
                                       </Combinator>
@@ -2668,7 +2670,7 @@
                                     </Expression>
                                     <Expression xsi:type="Combinator">
                                       <Combinator xsi:type="cv:Threshold">
-                                        <cv:ThresholdValue>160</cv:ThresholdValue>
+                                        <cv:ThresholdValue>59</cv:ThresholdValue>
                                         <cv:MaxValue>255</cv:MaxValue>
                                         <cv:ThresholdType>ToZeroInv</cv:ThresholdType>
                                       </Combinator>
@@ -2722,7 +2724,7 @@
                                       <Workflow>
                                         <Nodes>
                                           <Expression xsi:type="SubscribeSubject">
-                                            <Name>Status</Name>
+                                            <Name>CameraStatus</Name>
                                           </Expression>
                                           <Expression xsi:type="MemberSelector">
                                             <Selector>Paused</Selector>
@@ -2871,13 +2873,13 @@
                                       <Name>Source1</Name>
                                     </Expression>
                                     <Expression xsi:type="SubscribeSubject">
-                                      <Name>DataDisplay</Name>
+                                      <Name>DataDisplaySettings</Name>
                                     </Expression>
                                     <Expression xsi:type="MemberSelector">
                                       <Selector>MaxProjection</Selector>
                                     </Expression>
                                     <Expression xsi:type="SubscribeSubject">
-                                      <Name>Acquiring</Name>
+                                      <Name>IsAcquiring</Name>
                                     </Expression>
                                     <Expression xsi:type="rx:Condition">
                                       <Name>IsTrue</Name>
@@ -2956,7 +2958,7 @@
                                       <Workflow>
                                         <Nodes>
                                           <Expression xsi:type="SubscribeSubject">
-                                            <Name>Status</Name>
+                                            <Name>CameraStatus</Name>
                                           </Expression>
                                           <Expression xsi:type="MemberSelector">
                                             <Selector>Paused</Selector>
@@ -3108,7 +3110,7 @@
                                       <Name>Source1</Name>
                                     </Expression>
                                     <Expression xsi:type="SubscribeSubject">
-                                      <Name>DataDisplay</Name>
+                                      <Name>DataDisplaySettings</Name>
                                     </Expression>
                                     <Expression xsi:type="MemberSelector">
                                       <Selector>Overlay</Selector>
@@ -3149,7 +3151,7 @@
                                       <Workflow>
                                         <Nodes>
                                           <Expression xsi:type="SubscribeSubject">
-                                            <Name>Status</Name>
+                                            <Name>CameraStatus</Name>
                                           </Expression>
                                           <Expression xsi:type="MemberSelector">
                                             <Selector>Paused</Selector>
@@ -3346,7 +3348,7 @@
                           </PropertyMappings>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Acquiring</Name>
+                          <Name>IsAcquiring</Name>
                         </Expression>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="rx:DistinctUntilChanged" />
@@ -3366,7 +3368,7 @@
                           </Workflow>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>DataDisplay</Name>
+                          <Name>DataDisplaySettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>BufferSize</Selector>
@@ -3380,7 +3382,7 @@
                           <Workflow>
                             <Nodes>
                               <Expression xsi:type="SubscribeSubject">
-                                <Name>Frame</Name>
+                                <Name>MiniscopeV4Frame</Name>
                               </Expression>
                               <Expression xsi:type="MemberSelector">
                                 <Selector>Quaternion</Selector>
@@ -3396,7 +3398,7 @@
                                 <p1:ValueSelector>X,Y,Z,W</p1:ValueSelector>
                               </Expression>
                               <Expression xsi:type="SubscribeSubject">
-                                <Name>Acquiring</Name>
+                                <Name>IsAcquiring</Name>
                               </Expression>
                               <Expression xsi:type="rx:Condition">
                                 <Workflow>
@@ -3442,7 +3444,7 @@
                           <Workflow>
                             <Nodes>
                               <Expression xsi:type="SubscribeSubject">
-                                <Name>Frame</Name>
+                                <Name>MiniscopeV4Frame</Name>
                               </Expression>
                               <Expression xsi:type="MemberSelector">
                                 <Selector>DigitalIn</Selector>
@@ -3471,7 +3473,7 @@
                                 <p1:ValueSelector>Item1,Item2</p1:ValueSelector>
                               </Expression>
                               <Expression xsi:type="SubscribeSubject">
-                                <Name>Acquiring</Name>
+                                <Name>IsAcquiring</Name>
                               </Expression>
                               <Expression xsi:type="rx:Condition">
                                 <Workflow>
@@ -3521,7 +3523,7 @@
                           <Workflow>
                             <Nodes>
                               <Expression xsi:type="SubscribeSubject">
-                                <Name>Frame</Name>
+                                <Name>MiniscopeV4Frame</Name>
                               </Expression>
                               <Expression xsi:type="MemberSelector">
                                 <Selector>Quaternion</Selector>
@@ -3540,7 +3542,7 @@
                                 <p1:ValueSelector>Yaw,Pitch,Roll</p1:ValueSelector>
                               </Expression>
                               <Expression xsi:type="SubscribeSubject">
-                                <Name>Acquiring</Name>
+                                <Name>IsAcquiring</Name>
                               </Expression>
                               <Expression xsi:type="rx:Condition">
                                 <Workflow>
@@ -3584,7 +3586,7 @@
                           </PropertyMappings>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Acquiring</Name>
+                          <Name>IsAcquiring</Name>
                         </Expression>
                         <Expression xsi:type="PropertyMapping">
                           <PropertyMappings>
@@ -3600,7 +3602,7 @@
                           </PropertyMappings>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Frame</Name>
+                          <Name>MiniscopeV4Frame</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>FrameNumber</Selector>
@@ -3619,7 +3621,7 @@
                           </PropertyMappings>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>FileName</Selector>
@@ -3630,7 +3632,7 @@
                           </PropertyMappings>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Miniscope</Name>
+                          <Name>MiniscopeSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>FrameRate</Selector>
@@ -3641,7 +3643,7 @@
                           </PropertyMappings>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Status</Name>
+                          <Name>CameraStatus</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>Paused</Selector>
@@ -3652,11 +3654,11 @@
                           </PropertyMappings>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>DataDisplay</Name>
+                          <Name>DataDisplaySettings</Name>
                         </Expression>
                         <Expression xsi:type="PropertyMapping">
                           <PropertyMappings>
-                            <Property Name="Configuration" />
+                            <Property Name="DataDisplaySettings" />
                           </PropertyMappings>
                         </Expression>
                         <Expression xsi:type="Combinator">
@@ -3667,7 +3669,7 @@
                         </Expression>
                         <Expression xsi:type="WorkflowOutput" />
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Status</Name>
+                          <Name>CameraStatus</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>Paused</Selector>
@@ -3778,7 +3780,7 @@
                     <Combinator xsi:type="rx:DistinctUntilChanged" />
                   </Expression>
                   <Expression xsi:type="MulticastSubject">
-                    <Name>DataDisplay</Name>
+                    <Name>DataDisplaySettings</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>Item3</Selector>
@@ -3794,7 +3796,7 @@
                     <Workflow>
                       <Nodes>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>DataDisplay</Name>
+                          <Name>DataDisplaySettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>Overlay</Selector>
@@ -3807,7 +3809,7 @@
                                 <Name>Source1</Name>
                               </Expression>
                               <Expression xsi:type="SubscribeSubject">
-                                <Name>Acquiring</Name>
+                                <Name>IsAcquiring</Name>
                               </Expression>
                               <Expression xsi:type="Combinator">
                                 <Combinator xsi:type="rx:WithLatestFrom" />
@@ -3847,7 +3849,7 @@
                           </Workflow>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Frame</Name>
+                          <Name>MiniscopeV4Frame</Name>
                         </Expression>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="rx:WithLatestFrom" />
@@ -3859,14 +3861,14 @@
                           <Name>MiniscopeLog</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>FileName</Selector>
                         </Expression>
                         <Expression xsi:type="PropertyMapping">
                           <PropertyMappings>
-                            <Property Name="DataPath" />
+                            <Property Name="FileDataPath" />
                           </PropertyMappings>
                         </Expression>
                         <Expression xsi:type="Combinator">
@@ -3936,7 +3938,7 @@
                     <Property Name="DueTime" />
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Miniscope</Name>
+                    <Name>MiniscopeSettings</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>Focus</Selector>
@@ -4082,7 +4084,7 @@
                     </Workflow>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Status</Name>
+                    <Name>CameraStatus</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>CameraIndex</Selector>
@@ -4112,7 +4114,7 @@
                     </Workflow>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Commutator</Name>
+                    <Name>CommutatorSettings</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>EnableLed</Selector>
@@ -4273,7 +4275,7 @@
               <Workflow>
                 <Nodes>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>File</Name>
+                    <Name>FileSettings</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>RecordingRequested</Selector>
@@ -4303,7 +4305,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Acquiring</Name>
+                          <Name>IsAcquiring</Name>
                         </Expression>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="rx:WithLatestFrom" />
@@ -4333,7 +4335,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>RecordingMode</Selector>
@@ -4398,13 +4400,13 @@
               <Workflow>
                 <Nodes>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Frame</Name>
+                    <Name>MiniscopeV4Frame</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>DigitalIn</Selector>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>File</Name>
+                    <Name>FileSettings</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>TriggerInput</Selector>
@@ -4423,7 +4425,7 @@
                     </Operand>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>File</Name>
+                    <Name>FileSettings</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>RecordingRequested</Selector>
@@ -4453,7 +4455,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Acquiring</Name>
+                          <Name>IsAcquiring</Name>
                         </Expression>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="rx:WithLatestFrom" />
@@ -4480,7 +4482,7 @@
                     <Workflow>
                       <Nodes>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>RecordingMode</Selector>
@@ -4567,7 +4569,7 @@
                     <Name>Source1</Name>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>File</Name>
+                    <Name>FileSettings</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>FileName</Selector>
@@ -4581,7 +4583,7 @@
                     </PropertyMappings>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>File</Name>
+                    <Name>FileSettings</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>Suffix</Selector>
@@ -4596,8 +4598,8 @@
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="p1:GenerateRecordingFileNames">
-                      <p1:FileName>../data/run_</p1:FileName>
-                      <p1:Suffix>FileCount</p1:Suffix>
+                      <p1:FileName>../data/test/run_</p1:FileName>
+                      <p1:Suffix>Timestamp</p1:Suffix>
                     </Combinator>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
@@ -4661,7 +4663,7 @@
               </Combinator>
             </Expression>
             <Expression xsi:type="MulticastSubject">
-              <Name>Recording</Name>
+              <Name>IsRecording</Name>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="StringProperty" />
@@ -4675,10 +4677,10 @@
               </Combinator>
             </Expression>
             <Expression xsi:type="MulticastSubject">
-              <Name>TotalDurationElapsed</Name>
+              <Name>IsTotalDurationFinished</Name>
             </Expression>
             <Expression xsi:type="SubscribeSubject">
-              <Name>Miniscope</Name>
+              <Name>MiniscopeSettings</Name>
             </Expression>
             <Expression xsi:type="MemberSelector">
               <Selector>FrameRate</Selector>
@@ -4695,7 +4697,7 @@
               </PropertyMappings>
             </Expression>
             <Expression xsi:type="SubscribeSubject">
-              <Name>File</Name>
+              <Name>FileSettings</Name>
             </Expression>
             <Expression xsi:type="MemberSelector">
               <Selector>CompressVideo</Selector>
@@ -4748,7 +4750,7 @@
               <Workflow>
                 <Nodes>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Frame</Name>
+                    <Name>MiniscopeV4Frame</Name>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="p1:ObserveOnRecording" />
@@ -4758,7 +4760,7 @@
                     <Workflow>
                       <Nodes>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>RecordingRequested</Selector>
@@ -4803,7 +4805,7 @@
                           <Selector>DigitalIn</Selector>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>TriggerInput</Selector>
@@ -4823,7 +4825,7 @@
                         </Expression>
                         <Expression xsi:type="BitwiseNot" />
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>RecordingMode</Selector>
@@ -4840,7 +4842,7 @@
                           <scr:Expression>it.Item1 &amp;&amp; it.Item2</scr:Expression>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>RecordingRequested</Selector>
@@ -4894,7 +4896,7 @@
                     <Workflow>
                       <Nodes>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>RecordingMode</Selector>
@@ -4928,7 +4930,7 @@
                           </Combinator>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>RecordingDuration</Selector>
@@ -4971,7 +4973,7 @@
                     <Workflow>
                       <Nodes>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Acquiring</Name>
+                          <Name>IsAcquiring</Name>
                         </Expression>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="rx:DistinctUntilChanged" />
@@ -5006,7 +5008,7 @@
                     <Workflow>
                       <Nodes>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>RecordingMode</Selector>
@@ -5039,7 +5041,7 @@
                           <Workflow>
                             <Nodes>
                               <Expression xsi:type="SubscribeSubject">
-                                <Name>File</Name>
+                                <Name>FileSettings</Name>
                               </Expression>
                               <Expression xsi:type="MemberSelector">
                                 <Selector>SegmentMode</Selector>
@@ -5097,7 +5099,7 @@
                           </Combinator>
                         </Expression>
                         <Expression xsi:type="MulticastSubject">
-                          <Name>TotalDurationElapsed</Name>
+                          <Name>IsTotalDurationFinished</Name>
                         </Expression>
                         <Expression xsi:type="WorkflowOutput" />
                       </Nodes>
@@ -5131,7 +5133,7 @@
                     </Combinator>
                   </Expression>
                   <Expression xsi:type="MulticastSubject">
-                    <Name>Recording</Name>
+                    <Name>IsRecording</Name>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="p1:ObserveOnRecording" />
@@ -5147,7 +5149,7 @@
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="p1:WriteLogsToFile">
-                      <p1:FileName>..\data\run_0.log</p1:FileName>
+                      <p1:FileName>..\data\test\run_2026-08-14T14_26_50.log</p1:FileName>
                     </Combinator>
                   </Expression>
                   <Expression xsi:type="WorkflowOutput" />
@@ -5193,7 +5195,7 @@
                           <Property Name="FileName" DisplayName="CsvFileName" />
                         </Expression>
                         <Expression xsi:type="io:CsvWriter">
-                          <io:FileName>..\data\run_0.csv</io:FileName>
+                          <io:FileName>..\data\test\run_2026-08-14T14_26_50.csv</io:FileName>
                           <io:Append>false</io:Append>
                           <io:Overwrite>false</io:Overwrite>
                           <io:Suffix>None</io:Suffix>
@@ -5258,12 +5260,12 @@
                         </Expression>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="cv:VideoWriter">
-                            <cv:FileName>..\data\run_0.avi</cv:FileName>
+                            <cv:FileName>..\data\test\run_2026-08-14T14_26_50.avi</cv:FileName>
                             <cv:Suffix>None</cv:Suffix>
                             <cv:Buffered>true</cv:Buffered>
                             <cv:Overwrite>false</cv:Overwrite>
                             <cv:FourCC>MJPG</cv:FourCC>
-                            <cv:FrameRate>30</cv:FrameRate>
+                            <cv:FrameRate>25</cv:FrameRate>
                             <cv:FrameSize>
                               <cv:Width>0</cv:Width>
                               <cv:Height>0</cv:Height>
@@ -5415,7 +5417,7 @@
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="p1:ConfigurationRequest">
                             <p1:RequestType>ManualSave</p1:RequestType>
-                            <p1:ConfigFilePath>..\data\run_0.yml</p1:ConfigFilePath>
+                            <p1:ConfigFilePath>..\data\test\run_2026-08-14T14_26_50.yml</p1:ConfigFilePath>
                           </Combinator>
                         </Expression>
                         <Expression xsi:type="MulticastSubject">
@@ -5502,7 +5504,7 @@
                     </Combinator>
                   </Expression>
                   <Expression xsi:type="MulticastSubject">
-                    <Name>Recording</Name>
+                    <Name>IsRecording</Name>
                   </Expression>
                 </Nodes>
                 <Edges>
@@ -5518,7 +5520,7 @@
               <Workflow>
                 <Nodes>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Recording</Name>
+                    <Name>IsRecording</Name>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="rx:DistinctUntilChanged" />
@@ -5547,7 +5549,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>RecordingMode</Selector>
@@ -5602,7 +5604,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>SegmentMode</Selector>
@@ -5665,7 +5667,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="rx:WithLatestFrom" />
@@ -5716,7 +5718,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>TotalDurationElapsed</Name>
+                          <Name>IsTotalDurationFinished</Name>
                         </Expression>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="rx:WithLatestFrom" />
@@ -5771,7 +5773,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>RecordingDuration</Selector>
@@ -5812,7 +5814,7 @@
                           </Workflow>
                         </Expression>
                         <Expression xsi:type="MulticastSubject">
-                          <Name>TotalDurationElapsed</Name>
+                          <Name>IsTotalDurationFinished</Name>
                         </Expression>
                       </Nodes>
                       <Edges>
@@ -5838,7 +5840,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>TotalDurationElapsed</Name>
+                          <Name>IsTotalDurationFinished</Name>
                         </Expression>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="rx:WithLatestFrom" />
@@ -5883,7 +5885,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>SegmentMode</Selector>
@@ -5944,7 +5946,7 @@
                     </PropertyMappings>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>File</Name>
+                    <Name>FileSettings</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>RecordingMode</Selector>
@@ -6015,8 +6017,8 @@
                       <p1:RecordingRequested>false</p1:RecordingRequested>
                       <p1:RecordingMode>Manual</p1:RecordingMode>
                       <p1:CompressVideo>true</p1:CompressVideo>
-                      <p1:FileName>../data/run_</p1:FileName>
-                      <p1:Suffix>FileCount</p1:Suffix>
+                      <p1:FileName>../data/test/run_</p1:FileName>
+                      <p1:Suffix>Timestamp</p1:Suffix>
                       <p1:RecordingDuration>3</p1:RecordingDuration>
                       <p1:TotalDuration>10</p1:TotalDuration>
                       <p1:SegmentMode>AutoRestart</p1:SegmentMode>
@@ -6024,7 +6026,7 @@
                     </Combinator>
                   </Expression>
                   <Expression xsi:type="MulticastSubject">
-                    <Name>File</Name>
+                    <Name>FileSettings</Name>
                   </Expression>
                 </Nodes>
                 <Edges>
@@ -6141,7 +6143,7 @@
                           </PropertyMappings>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>File</Name>
+                          <Name>FileSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>RecordingMode</Selector>
@@ -6236,8 +6238,8 @@
                             <p1:RecordingRequested>false</p1:RecordingRequested>
                             <p1:RecordingMode>Manual</p1:RecordingMode>
                             <p1:CompressVideo>true</p1:CompressVideo>
-                            <p1:FileName>../data/run_</p1:FileName>
-                            <p1:Suffix>FileCount</p1:Suffix>
+                            <p1:FileName>../data/test/run_</p1:FileName>
+                            <p1:Suffix>Timestamp</p1:Suffix>
                             <p1:RecordingDuration>3</p1:RecordingDuration>
                             <p1:TotalDuration>10</p1:TotalDuration>
                             <p1:SegmentMode>AutoRestart</p1:SegmentMode>
@@ -6290,7 +6292,7 @@
                     <Combinator xsi:type="p1:ObserveOnControl" />
                   </Expression>
                   <Expression xsi:type="MulticastSubject">
-                    <Name>File</Name>
+                    <Name>FileSettings</Name>
                   </Expression>
                 </Nodes>
                 <Edges>
@@ -6309,7 +6311,7 @@
               <Workflow>
                 <Nodes>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Recording</Name>
+                    <Name>IsRecording</Name>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="rx:DistinctUntilChanged" />
@@ -6401,7 +6403,7 @@
         <Workflow>
           <Nodes>
             <Expression xsi:type="SubscribeSubject">
-              <Name>Commutator</Name>
+              <Name>CommutatorSettings</Name>
             </Expression>
             <Expression xsi:type="MemberSelector">
               <Selector>ConnectionRequested</Selector>
@@ -6442,7 +6444,7 @@
               <Name>CommutatorConnected</Name>
             </Expression>
             <Expression xsi:type="SubscribeSubject">
-              <Name>Commutator</Name>
+              <Name>CommutatorSettings</Name>
             </Expression>
             <Expression xsi:type="MemberSelector">
               <Selector>PortName</Selector>
@@ -6481,7 +6483,7 @@
               <Workflow>
                 <Nodes>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Frame</Name>
+                    <Name>MiniscopeV4Frame</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>Quaternion</Selector>
@@ -6609,7 +6611,7 @@
                           </PropertyMappings>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Commutator</Name>
+                          <Name>CommutatorSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>PortName</Selector>
@@ -6661,11 +6663,11 @@
                             <p1:PortName>COM3</p1:PortName>
                             <p1:Enable>true</p1:Enable>
                             <p1:EnableLed>true</p1:EnableLed>
-                            <p1:AutoConnect>true</p1:AutoConnect>
+                            <p1:AutoConnect>false</p1:AutoConnect>
                           </Combinator>
                         </Expression>
                         <Expression xsi:type="MulticastSubject">
-                          <Name>Commutator</Name>
+                          <Name>CommutatorSettings</Name>
                         </Expression>
                         <Expression xsi:type="WorkflowOutput" />
                       </Nodes>
@@ -6710,7 +6712,7 @@
                           <Name>Source1</Name>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
-                          <Name>Commutator</Name>
+                          <Name>CommutatorSettings</Name>
                         </Expression>
                         <Expression xsi:type="MemberSelector">
                           <Selector>AutoConnect</Selector>
@@ -6729,7 +6731,7 @@
                                 <Name>Source1</Name>
                               </Expression>
                               <Expression xsi:type="SubscribeSubject">
-                                <Name>Acquiring</Name>
+                                <Name>IsAcquiring</Name>
                               </Expression>
                               <Expression xsi:type="Combinator">
                                 <Combinator xsi:type="rx:WithLatestFrom" />
@@ -6770,7 +6772,7 @@
                           </Combinator>
                         </Expression>
                         <Expression xsi:type="MulticastSubject">
-                          <Name>Acquiring</Name>
+                          <Name>IsAcquiring</Name>
                         </Expression>
                       </Nodes>
                       <Edges>
@@ -6801,7 +6803,7 @@
               <Workflow>
                 <Nodes>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Commutator</Name>
+                    <Name>CommutatorSettings</Name>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
                     <Selector>ConnectionRequested</Selector>

@@ -28,8 +28,7 @@ public class StatusBar
     /// Gets or sets a value indicating whether an automatic restart was triggered.
     /// </summary>
     /// <remarks>
-    /// Automatic restarts are not guaranteed to reset the recording timer; this value
-    /// can be set to force a reset of the recording timer.
+    /// This value will force a reset of the recording timer when it is true.
     /// </remarks>
     [XmlIgnore]
     [Browsable(false)]
@@ -41,10 +40,6 @@ public class StatusBar
 
     int automaticRestartTriggered;
 
-    /// <summary>
-    /// Consumes a pending automatic restart, if one was raised since the last call.
-    /// </summary>
-    /// <returns><see langword="true"/> if a restart was pending.</returns>
     bool ConsumeAutomaticRestart() => Interlocked.Exchange(ref automaticRestartTriggered, 0) != 0;
 
     /// <summary>
@@ -61,10 +56,10 @@ public class StatusBar
     /// </summary>
     [XmlIgnore]
     [Browsable(false)]
-    public CameraStatus Configuration { get; set; } = new();
+    public CameraStatus CameraStatus { get; set; } = new();
 
     /// <summary>
-    /// Renders the status bar controls and returns an updated <see cref="CameraStatus"/> alongside each source value.
+    /// Renders the status bar controls and returns an updated <see cref="Gui.CameraStatus"/> alongside each source value.
     /// </summary>
     /// <param name="source">
     /// A sequence pairing the shared <see cref="GuiLayout"/> with whether the Miniscope is actually
@@ -85,9 +80,9 @@ public class StatusBar
                 var guiLayout = value.Item1;
                 var acquiring = value.Item2;
 
-                var cameraIndex = Configuration.CameraIndex;
-                var acquisitionRequested = Configuration.AcquisitionRequested;
-                var paused = Configuration.Paused;
+                var cameraIndex = CameraStatus.CameraIndex;
+                var acquisitionRequested = CameraStatus.AcquisitionRequested;
+                var paused = CameraStatus.Paused;
 
                 if (wasAcquiring && !acquiring)
                     acquisitionRequested = false;
@@ -256,7 +251,7 @@ public class StatusBar
                     Paused = paused
                 };
 
-                Configuration = updatedCameraStatus;
+                CameraStatus = updatedCameraStatus;
 
                 // NB: If the ImageExpanded was requested to be toggled last frame, respect that request here at the top of the current frame.
                 if (guiLayout.ImageExpandedRequested != guiLayout.ImageExpanded)
