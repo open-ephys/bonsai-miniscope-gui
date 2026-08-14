@@ -520,14 +520,8 @@ public class DataPanel
                     if (screenshotButtonActive && !textInputActive && ImGui.IsKeyPressed(ImGuiKey.C))
                         SetScreenshotCapture(true);
 
-                    if (!textInputActive && ImGui.IsKeyPressed(ImGuiKey.R))
-                        SetMaxProjectionReset(true);
-
                     if (!textInputActive && ImGui.IsKeyPressed(ImGuiKey.E))
                         layout = layout with { ImageExpandedRequested = !layout.ImageExpanded };
-
-                    if (!fileMissing && !textInputActive && ImGui.IsKeyPressed(ImGuiKey.O))
-                        applyOverlay = !applyOverlay;
 
                     bool expanded = layout.ImageExpanded;
                     if (!expanded)
@@ -708,6 +702,9 @@ public class DataPanel
                                     "Maximum projection intensity is continuously accumulated until manually reset.");
                                 if (maxProjectionTabOpen)
                                 {
+                                    if (!textInputActive && ImGui.IsKeyPressed(ImGuiKey.R))
+                                        SetMaxProjectionReset(true);
+
                                     activeTab = ImageTab.MaxProjection;
                                     RenderImageArea("##image_area_maxprojection", imageAreaSize, displaySize, ActiveImage);
                                     ImGui.SameLine();
@@ -742,6 +739,9 @@ public class DataPanel
                                     "(e.g., a previous captured image) to help align the current field of view.");
                                 if (referenceImageTabOpen)
                                 {
+                                    if (!fileMissing && !textInputActive && ImGui.IsKeyPressed(ImGuiKey.O))
+                                        applyOverlay = !applyOverlay;
+
                                     activeTab = ImageTab.Overlay;
                                     bool showImage = !string.IsNullOrEmpty(overlayReferencePath) || applyOverlay;
                                     var image = showImage ? ActiveImage : default;
