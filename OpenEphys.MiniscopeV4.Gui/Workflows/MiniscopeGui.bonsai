@@ -485,10 +485,10 @@
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="p3:UclaMiniscopeV4">
                       <p3:Index>0</p3:Index>
-                      <p3:LedBrightness>76.6</p3:LedBrightness>
-                      <p3:Focus>54.3</p3:Focus>
-                      <p3:SensorGain>High</p3:SensorGain>
-                      <p3:FramesPerSecond>Fps25</p3:FramesPerSecond>
+                      <p3:LedBrightness>0</p3:LedBrightness>
+                      <p3:Focus>0</p3:Focus>
+                      <p3:SensorGain>Low</p3:SensorGain>
+                      <p3:FramesPerSecond>Fps30</p3:FramesPerSecond>
                       <p3:LedRespectsDigitalIn>None</p3:LedRespectsDigitalIn>
                     </Combinator>
                   </Expression>
@@ -834,6 +834,11 @@
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="rx:DistinctUntilChanged" />
                   </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="rx:Skip">
+                      <rx:Count>1</rx:Count>
+                    </Combinator>
+                  </Expression>
                   <Expression xsi:type="rx:Condition">
                     <Name>False</Name>
                     <Workflow>
@@ -869,9 +874,10 @@
                   <Edge From="0" To="1" Label="Source1" />
                   <Edge From="1" To="2" Label="Source1" />
                   <Edge From="2" To="3" Label="Source1" />
-                  <Edge From="3" To="5" Label="Source1" />
-                  <Edge From="4" To="5" Label="Source2" />
-                  <Edge From="5" To="6" Label="Source1" />
+                  <Edge From="3" To="4" Label="Source1" />
+                  <Edge From="4" To="6" Label="Source1" />
+                  <Edge From="5" To="6" Label="Source2" />
+                  <Edge From="6" To="7" Label="Source1" />
                 </Edges>
               </Workflow>
             </Expression>
@@ -1303,7 +1309,7 @@
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="p1:CommutatorSettings">
                             <p1:ConnectionRequested>false</p1:ConnectionRequested>
-                            <p1:PortName>COM1</p1:PortName>
+                            <p1:PortName />
                             <p1:Enable>true</p1:Enable>
                             <p1:EnableLed>true</p1:EnableLed>
                             <p1:AutoConnect>false</p1:AutoConnect>
@@ -2141,7 +2147,7 @@
                         </Expression>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="IntProperty">
-                            <Value>10</Value>
+                            <Value>3600</Value>
                           </Combinator>
                         </Expression>
                         <Expression xsi:type="MulticastSubject">
@@ -2413,9 +2419,9 @@
                                     </Expression>
                                     <Expression xsi:type="Combinator">
                                       <Combinator xsi:type="p3:DeltaFOverF">
-                                        <p3:BackgroundFrames>2</p3:BackgroundFrames>
-                                        <p3:BackgroundThreshold>218.6</p3:BackgroundThreshold>
-                                        <p3:Sigma>5</p3:Sigma>
+                                        <p3:BackgroundFrames>100</p3:BackgroundFrames>
+                                        <p3:BackgroundThreshold>92</p3:BackgroundThreshold>
+                                        <p3:Sigma>3</p3:Sigma>
                                       </Combinator>
                                     </Expression>
                                     <Expression xsi:type="WorkflowOutput" />
@@ -2618,7 +2624,7 @@
                                     </Expression>
                                     <Expression xsi:type="Combinator">
                                       <Combinator xsi:type="cv:Threshold">
-                                        <cv:ThresholdValue>59</cv:ThresholdValue>
+                                        <cv:ThresholdValue>160</cv:ThresholdValue>
                                         <cv:MaxValue>255</cv:MaxValue>
                                         <cv:ThresholdType>Binary</cv:ThresholdType>
                                       </Combinator>
@@ -2649,8 +2655,8 @@
                                         <cv:Channels>3</cv:Channels>
                                         <cv:Color>
                                           <cv:Val0>0</cv:Val0>
-                                          <cv:Val1>255</cv:Val1>
-                                          <cv:Val2>25.822807312011719</cv:Val2>
+                                          <cv:Val1>0</cv:Val1>
+                                          <cv:Val2>100</cv:Val2>
                                           <cv:Val3>0</cv:Val3>
                                         </cv:Color>
                                       </Combinator>
@@ -2670,7 +2676,7 @@
                                     </Expression>
                                     <Expression xsi:type="Combinator">
                                       <Combinator xsi:type="cv:Threshold">
-                                        <cv:ThresholdValue>59</cv:ThresholdValue>
+                                        <cv:ThresholdValue>160</cv:ThresholdValue>
                                         <cv:MaxValue>255</cv:MaxValue>
                                         <cv:ThresholdType>ToZeroInv</cv:ThresholdType>
                                       </Combinator>
@@ -4598,8 +4604,8 @@
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="p1:GenerateRecordingFileNames">
-                      <p1:FileName>../data/test/run_</p1:FileName>
-                      <p1:Suffix>Timestamp</p1:Suffix>
+                      <p1:FileName />
+                      <p1:Suffix>FileCount</p1:Suffix>
                     </Combinator>
                   </Expression>
                   <Expression xsi:type="MemberSelector">
@@ -5264,8 +5270,8 @@
                             <cv:Suffix>None</cv:Suffix>
                             <cv:Buffered>true</cv:Buffered>
                             <cv:Overwrite>false</cv:Overwrite>
-                            <cv:FourCC>MJPG</cv:FourCC>
-                            <cv:FrameRate>25</cv:FrameRate>
+                            <cv:FourCC>Y800</cv:FourCC>
+                            <cv:FrameRate>30</cv:FrameRate>
                             <cv:FrameSize>
                               <cv:Width>0</cv:Width>
                               <cv:Height>0</cv:Height>
@@ -6016,12 +6022,12 @@
                     <Combinator xsi:type="p1:FileSettings">
                       <p1:RecordingRequested>false</p1:RecordingRequested>
                       <p1:RecordingMode>Manual</p1:RecordingMode>
-                      <p1:CompressVideo>true</p1:CompressVideo>
-                      <p1:FileName>../data/test/run_</p1:FileName>
-                      <p1:Suffix>Timestamp</p1:Suffix>
-                      <p1:RecordingDuration>3</p1:RecordingDuration>
-                      <p1:TotalDuration>10</p1:TotalDuration>
-                      <p1:SegmentMode>AutoRestart</p1:SegmentMode>
+                      <p1:CompressVideo>false</p1:CompressVideo>
+                      <p1:FileName />
+                      <p1:Suffix>FileCount</p1:Suffix>
+                      <p1:RecordingDuration>600</p1:RecordingDuration>
+                      <p1:TotalDuration>3600</p1:TotalDuration>
+                      <p1:SegmentMode>MultipleFiles</p1:SegmentMode>
                       <p1:TriggerInput>DigitalIn0</p1:TriggerInput>
                     </Combinator>
                   </Expression>
@@ -6237,12 +6243,12 @@
                           <Combinator xsi:type="p1:FileSettings">
                             <p1:RecordingRequested>false</p1:RecordingRequested>
                             <p1:RecordingMode>Manual</p1:RecordingMode>
-                            <p1:CompressVideo>true</p1:CompressVideo>
-                            <p1:FileName>../data/test/run_</p1:FileName>
-                            <p1:Suffix>Timestamp</p1:Suffix>
-                            <p1:RecordingDuration>3</p1:RecordingDuration>
-                            <p1:TotalDuration>10</p1:TotalDuration>
-                            <p1:SegmentMode>AutoRestart</p1:SegmentMode>
+                            <p1:CompressVideo>false</p1:CompressVideo>
+                            <p1:FileName />
+                            <p1:Suffix>FileCount</p1:Suffix>
+                            <p1:RecordingDuration>600</p1:RecordingDuration>
+                            <p1:TotalDuration>3600</p1:TotalDuration>
+                            <p1:SegmentMode>MultipleFiles</p1:SegmentMode>
                             <p1:TriggerInput>DigitalIn0</p1:TriggerInput>
                           </Combinator>
                         </Expression>

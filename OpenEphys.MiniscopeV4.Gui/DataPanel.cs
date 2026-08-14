@@ -753,39 +753,47 @@ public class DataPanel
                                     {
                                         ImGui.TextUnformatted("Reference Image");
 
-                                        const string selectLabel = "...";
-                                        const string browseLabel = "Browse";
-                                        var (selectWidth, browseWidth, inputWidth) = FilePanel.CalculateFileNameInputWidth(selectLabel, browseLabel);
-
-                                        ImGui.SetNextItemWidth(inputWidth);
+                                        ImGui.SetNextItemWidth(fillAvailable.X);
                                         ImGui.InputText("##overlay_path", ref overlayReferencePath, pathBufSize, ImGuiInputTextFlags.ReadOnly | ImGuiInputTextFlags.ElideLeft);
 
-                                        ImGui.SameLine();
-                                        if (ImGui.Button($"{selectLabel}##choose_screenshot", new Vector2(selectWidth, 0)))
+                                        if (ImGui.BeginTable("##overlay_buttons", 3))
                                         {
-                                            if (overlayDialogTask == null || overlayDialogTask.IsCompleted)
+                                            ImGui.TableNextColumn();
+                                            if (ImGui.Button("Select##select_screenshot", new Vector2(-1f, 0f)))
                                             {
-                                                overlayDialogTask = FileDialogHelpers.RunDialogTask(() => new OpenFileDialog
+                                                if (overlayDialogTask == null || overlayDialogTask.IsCompleted)
                                                 {
-                                                    Filter = "Images|*.png;*.tif;*.tiff;*.jpg;*.bmp|All Files|*.*",
-                                                    CheckFileExists = true,
-                                                    Multiselect = false,
-                                                    InitialDirectory = FileDialogHelpers.GetDirectory(DataPath),
-                                                    Title = "Choose a captured image to load.",
-                                                },
-                                                (dlg) => (dlg as OpenFileDialog).FileName);
+                                                    overlayDialogTask = FileDialogHelpers.RunDialogTask(() => new OpenFileDialog
+                                                    {
+                                                        Filter = "Images|*.png;*.tif;*.tiff;*.jpg;*.bmp|All Files|*.*",
+                                                        CheckFileExists = true,
+                                                        Multiselect = false,
+                                                        InitialDirectory = FileDialogHelpers.GetDirectory(DataPath),
+                                                        Title = "Choose a captured image to load.",
+                                                    },
+                                                    (dlg) => (dlg as OpenFileDialog).FileName);
+                                                }
                                             }
-                                        }
-                                        Tooltip.Describe("Choose a reference image (e.g., a previous captured image) to overlay on the live view.");
+                                            Tooltip.Describe("Choose a reference image (e.g., a previous captured image) to overlay on the live view.");
 
-                                        ImGui.SameLine();
-                                        if (ImGui.Button($"{browseLabel}##browse_screenshots", new Vector2(browseWidth, 0)))
-                                        {
-                                            var dir = FileDialogHelpers.GetDirectory(DataPath);
-                                            if (Directory.Exists(dir))
-                                                System.Diagnostics.Process.Start("explorer.exe", dir);
+                                            ImGui.TableNextColumn();
+                                            if (ImGui.Button("Clear##clear_overlay_path", new Vector2(-1f, 0f)))
+                                            {
+                                                overlayReferencePath = string.Empty;
+                                            }
+                                            Tooltip.Describe("Clears the existing reference image path.");
+
+                                            ImGui.TableNextColumn();
+                                            if (ImGui.Button("Browse##browse_screenshots", new Vector2(-1f, 0f)))
+                                            {
+                                                var dir = FileDialogHelpers.GetDirectory(DataPath);
+                                                if (Directory.Exists(dir))
+                                                    System.Diagnostics.Process.Start("explorer.exe", dir);
+                                            }
+                                            Tooltip.Describe("Open the data folder in File Explorer to browse for previous captured images.");
+
+                                            ImGui.EndTable();
                                         }
-                                        Tooltip.Describe("Open the data folder in File Explorer to browse for previous captured images.");
 
                                         if (fileMissing) ImGui.BeginDisabled();
 
@@ -795,7 +803,13 @@ public class DataPanel
                                             Tooltip.AddLine("Overlay the live image on the reference image to align the current field of view with a previous one.");
                                             Tooltip.AddKeyboardShortcut("O");
                                             if (fileMissing)
-                                                Tooltip.Note("Unavailable until a valid reference image is chosen.");
+                                            {
+                                                if (!File.Exists(DataPath))
+                                                    Tooltip.Note("Unavailable because the selected image could not be loaded from the chosen file path.");
+
+                                                else
+                                                    Tooltip.Note("Unavailable until a reference image is chosen.");
+                                            }
                                             Tooltip.End();
                                         }
 
