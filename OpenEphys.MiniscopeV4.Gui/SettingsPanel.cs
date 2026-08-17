@@ -220,8 +220,11 @@ public class SettingsPanel
                 {
                     if (commutatorsFound)
                     {
-                        log.Warning($"Could not find a commutator at {portName}, switching to the first discovered commutator at {portNames[0]}.\n" +
-                            $"Ensure that the correct commutator is connected before refreshing the list of commutators.");
+                        if (!string.IsNullOrEmpty(portName))
+                        {
+                            log.Warning($"Could not find a commutator at {portName}, switching to the first discovered commutator at {portNames[0]}.\n" +
+                                $"Ensure that the correct commutator is connected before refreshing the list of commutators.");
+                        }
                         portIndex = 0;
                         portName = portNames[0];
                     }
