@@ -38,7 +38,6 @@
 	<PropertyGroup>
 		<SettingsSchema>Configuration\miniscope-config.schema.json</SettingsSchema>
 		<SettingsGenerated>Configuration\Settings.cs</SettingsGenerated>
-		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	</PropertyGroup>
 
 	<ItemGroup>
