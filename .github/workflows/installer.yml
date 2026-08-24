@@ -38,7 +38,7 @@ jobs:
         if: github.event_name != 'release'
         shell: pwsh
         run: |
-          dotnet pack OpenEphys.MiniscopeV4.Gui\OpenEphys.MiniscopeV4.Gui.csproj `
+          dotnet pack OpenEphys.Miniscope.Gui\OpenEphys.Miniscope.Gui.csproj `
             --configuration Release `
             -p:ContinuousIntegrationBuild=true `
             -p:CiBuildVersionSuffix="${{ steps.version.outputs.suffix }}" `
@@ -47,7 +47,7 @@ jobs:
             --output launcher\lib
           if ($LASTEXITCODE -ne 0) { throw "dotnet pack failed" }
 
-          $expected = "launcher\lib\OpenEphys.MiniscopeV4.Gui.${{ steps.version.outputs.version }}.nupkg"
+          $expected = "launcher\lib\OpenEphys.Miniscope.Gui.${{ steps.version.outputs.version }}.nupkg"
           if (-not (Test-Path $expected)) {
             Get-ChildItem launcher\lib
             throw "Expected packed package at $expected"
@@ -62,8 +62,8 @@ jobs:
           $version = "${{ steps.version.outputs.version }}"
           $configPath = "launcher\.bonsai\Bonsai.config"
           (Get-Content $configPath) `
-            -replace '(<Package id="OpenEphys\.MiniscopeV4\.Gui" version=")[^"]*(")', "`${1}$version`${2}" `
-            -replace '(location="Packages/OpenEphys\.MiniscopeV4\.Gui\.)[^/]*(/lib/net472/OpenEphys\.MiniscopeV4\.Gui\.dll")', "`${1}$version`${2}" |
+            -replace '(<Package id="OpenEphys\.Miniscope\.Gui" version=")[^"]*(")', "`${1}$version`${2}" `
+            -replace '(location="Packages/OpenEphys\.Miniscope\.Gui\.)[^/]*(/lib/net472/OpenEphys\.Miniscope\.Gui\.dll")', "`${1}$version`${2}" |
             Set-Content $configPath
 
       - name: Install Inno Setup
@@ -73,17 +73,17 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ steps.version.outputs.version }}"
-          & iscc "/DAppVersion=$version" installer\MiniscopeGui.iss
+          & iscc "/DAppVersion=$version" installer\MiniscopeV4Gui.iss
 
       - name: Upload installer artifact
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v7
         with:
-          name: MiniscopeGui-Setup-${{ steps.version.outputs.version }}
-          path: artifacts/MiniscopeGui-Setup-*.exe
+          name: MiniscopeV4Gui-Setup-${{ steps.version.outputs.version }}
+          path: artifacts/MiniscopeV4Gui-Setup-*.exe
 
       - name: Attach installer to release
         if: github.event_name == 'release'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name }}" artifacts/MiniscopeGui-Setup-*.exe
+        run: gh release upload "${{ github.event.release.tag_name }}" artifacts/MiniscopeV4Gui-Setup-*.exe

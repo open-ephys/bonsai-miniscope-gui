@@ -17,4 +17,4 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Test
-        run: dotnet test OpenEphys.MiniscopeV4.Gui.sln --configuration Release
+        run: dotnet test OpenEphys.Miniscope.Gui.sln --configuration Release
