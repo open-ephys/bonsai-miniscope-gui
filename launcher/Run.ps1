@@ -47,12 +47,12 @@ if ($BootstrapOnly) {
 }
 
 $WorkflowFile = @(
-    (Join-Path $ScriptDir "MiniscopeGui.bonsai"),
-    (Join-Path $ScriptDir "..\OpenEphys.MiniscopeV4.Gui\Workflows\MiniscopeGui.bonsai")
+    (Join-Path $ScriptDir "MiniscopeV4Gui.bonsai"),
+    (Join-Path $ScriptDir "..\OpenEphys.Miniscope.Gui\Workflows\MiniscopeV4Gui.bonsai")
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 
 if (-not $WorkflowFile) {
-    Write-Error "MiniscopeGui.bonsai not found.`nExpected at: $ScriptDir\MiniscopeGui.bonsai"
+    Write-Error "MiniscopeV4Gui.bonsai not found.`nExpected at: $ScriptDir\MiniscopeV4Gui.bonsai"
     exit 1
 }
 

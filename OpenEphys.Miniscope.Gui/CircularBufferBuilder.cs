@@ -1,0 +1,209 @@
+﻿using Bonsai;
+using Bonsai.Expressions;
+using Bonsai.ImGui.Visualizers;
+using Hexa.NET.ImPlot;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reactive.Linq;
+
+namespace OpenEphys.Miniscope.Gui;
+
+/// <summary>
+/// Represents an operator that creates a circular buffer object which can be used for
+/// drawing one or multiple series.
+/// </summary>
+[Description("Creates a circular buffer object which can be used for drawing one or multiple series.")]
+public class CircularBufferBuilder : SingleArgumentExpressionBuilder
+{
+    /// <summary>
+    /// Gets or sets the capacity of the circular buffer.
+    /// </summary>
+    [Description("The capacity of the circular buffer.")]
+    public int Capacity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the name of the property that will be used to fill the X-axis data for all series.
+    /// </summary>
+    [Editor("Bonsai.Design.MemberSelectorEditor, Bonsai.Design", DesignTypes.UITypeEditor)]
+    [Description("The name of the property that will be used to fill the X-axis data for all series.")]
+    public string IndexSelector { get; set; }
+
+    /// <summary>
+    /// Gets or sets the names of the properties that will be used to populate individual series data.
+    /// </summary>
+    [Editor("Bonsai.ImGui.Visualizers.DataMemberSelectorEditor, Bonsai.ImGui.Visualizers.Design", DesignTypes.UITypeEditor)]
+    [Description("The names of the properties that will be used to populate individual series data.")]
+    public string ValueSelector { get; set; }
+
+    static LambdaExpression CreateValueGetter(ParameterExpression getterParameter, Type delegateType, string memberPath)
+    {
+        var member = ExpressionHelper.MemberAccess(getterParameter, memberPath);
+        var getterBody = member.Type != typeof(double) ? Expression.Convert(member, typeof(double)) : member;
+        return Expression.Lambda(delegateType, getterBody, memberPath, new[] { getterParameter });
+    }
+
+    static IEnumerable<LambdaExpression> CreateMemberGetters(ParameterExpression getterParameter, Type delegateType, string selector)
+    {
+        if (string.IsNullOrEmpty(selector))
+        {
+            yield return CreateValueGetter(getterParameter, delegateType, string.Empty);
+            yield break;
+        }
+
+        foreach (var memberName in ExpressionHelper.SelectMemberNames(selector))
+            yield return CreateValueGetter(getterParameter, delegateType, memberName);
+    }
+
+    static NewArrayExpression CreateMemberGetterArray(Type namedGetterType, ParameterExpression getterParameter, Type delegateType, string selector)
+    {
+        var memberGetters = CreateMemberGetters(getterParameter, delegateType, selector);
+        var constructorInfo = namedGetterType.GetConstructor(namedGetterType.GetGenericArguments());
+        return Expression.NewArrayInit(namedGetterType, memberGetters.Select(getter =>
+            Expression.New(constructorInfo, Expression.Constant(getter.Name), getter)));
+    }
+
+    /// <inheritdoc/>
+    public override Expression Build(IEnumerable<Expression> arguments)
+    {
+        var source = arguments.First();
+        var methodName = nameof(Process);
+        var parameterType = source.Type.GetGenericArguments()[0];
+        if (ExpressionHelper.IsEnumerableType(parameterType))
+        {
+            parameterType = parameterType.GetGenericArguments()[0];
+            methodName = nameof(ProcessCollection);
+        }
+
+        var getterType = typeof(ValueGetter<>).MakeGenericType(parameterType);
+        var namedGetterType = typeof(KeyValuePair<,>).MakeGenericType(typeof(string), getterType);
+        var getterParameter = Expression.Parameter(parameterType.MakeByRefType());
+        var combinator = Expression.Constant(this);
+
+        var indexSelector = IndexSelector;
+        if (!string.IsNullOrEmpty(indexSelector))
+        {
+            var getterX = CreateValueGetter(getterParameter, getterType, indexSelector);
+            var getterY = CreateMemberGetterArray(namedGetterType, getterParameter, getterType, ValueSelector);
+            return Expression.Call(combinator, methodName, new[] { parameterType }, source, getterX, getterY);
+        }
+        else
+        {
+            var getterY = CreateMemberGetterArray(namedGetterType, getterParameter, getterType, ValueSelector);
+            return Expression.Call(combinator, methodName, new[] { parameterType }, source, getterY);
+        }
+    }
+
+    static unsafe NamedPlotPointGetter CreatePlotPointGetter<TSource>(
+        CircularBuffer<TSource> buffer,
+        string name,
+        ValueGetter<TSource> getY)
+    {
+        var nullable = !typeof(TSource).IsValueType;
+        return new(name, (_, idx, pointPtr) =>
+        {
+            var point = (ImPlotPoint*)pointPtr;
+            ref var value = ref buffer[idx];
+            point->X = idx;
+            point->Y = nullable && (object)value is null ? 0.0 : getY(ref value);
+            return pointPtr;
+        });
+    }
+
+    static unsafe NamedPlotPointGetter CreatePlotPointGetter<TSource>(
+        CircularBuffer<TSource> buffer,
+        string name,
+        ValueGetter<TSource> getX,
+        ValueGetter<TSource> getY)
+    {
+        var nullable = !typeof(TSource).IsValueType;
+        return new(name, (_, idx, pointPtr) =>
+        {
+            var point = (ImPlotPoint*)pointPtr;
+            ref var value = ref buffer[idx];
+            if (nullable && (object)value is null)
+            {
+                point->X = idx;
+                point->Y = 0.0;
+            }
+            else
+            {
+                point->X = getX(ref value);
+                point->Y = getY(ref value);
+            }
+            return pointPtr;
+        });
+    }
+
+    unsafe IObservable<CircularPlotPointSeries<TSource>> Process<TSource>(IObservable<TSource> source, KeyValuePair<string, ValueGetter<TSource>>[] valueGetters)
+    {
+        return Observable.Defer(() =>
+        {
+            var buffer = new CircularBuffer<TSource>(Capacity);
+            NamedPlotPointGetter[] CreateGetters(CircularBuffer<TSource> target) =>
+                Array.ConvertAll(valueGetters, getter => CreatePlotPointGetter(target, getter.Key, getter.Value));
+            var getters = CreateGetters(buffer);
+            var series = new CircularPlotPointSeries<TSource>(buffer, getters, CreateGetters);
+            return source.Select(value =>
+            {
+                buffer.Push(value);
+                return series;
+            });
+        });
+    }
+
+    unsafe IObservable<CircularPlotPointSeries<TSource>> ProcessCollection<TSource>(IObservable<IEnumerable<TSource>> source, KeyValuePair<string, ValueGetter<TSource>>[] valueGetters)
+    {
+        return Observable.Defer(() =>
+        {
+            var buffer = new CircularBuffer<TSource>(Capacity);
+            NamedPlotPointGetter[] CreateGetters(CircularBuffer<TSource> target) =>
+                Array.ConvertAll(valueGetters, getter => CreatePlotPointGetter(target, getter.Key, getter.Value));
+            var getters = CreateGetters(buffer);
+            var series = new CircularPlotPointSeries<TSource>(buffer, getters, CreateGetters);
+            return source.Select(value =>
+            {
+                buffer.Push(value);
+                return series;
+            });
+        });
+    }
+
+    unsafe IObservable<CircularPlotPointSeries<TSource>> Process<TSource>(IObservable<TSource> source, ValueGetter<TSource> indexGetter, KeyValuePair<string, ValueGetter<TSource>>[] valueGetters)
+    {
+        return Observable.Defer(() =>
+        {
+            var buffer = new CircularBuffer<TSource>(Capacity);
+            NamedPlotPointGetter[] CreateGetters(CircularBuffer<TSource> target) =>
+                Array.ConvertAll(valueGetters, getter => CreatePlotPointGetter(target, getter.Key, indexGetter, getter.Value));
+            var getters = CreateGetters(buffer);
+            var series = new CircularPlotPointSeries<TSource>(buffer, getters, CreateGetters);
+            return source.Select(value =>
+            {
+                buffer.Push(value);
+                return series;
+            });
+        });
+    }
+
+    unsafe IObservable<CircularPlotPointSeries<TSource>> ProcessCollection<TSource>(IObservable<IEnumerable<TSource>> source, ValueGetter<TSource> indexGetter, KeyValuePair<string, ValueGetter<TSource>>[] valueGetters)
+    {
+        return Observable.Defer(() =>
+        {
+            var buffer = new CircularBuffer<TSource>(Capacity);
+            NamedPlotPointGetter[] CreateGetters(CircularBuffer<TSource> target) =>
+                Array.ConvertAll(valueGetters, getter => CreatePlotPointGetter(target, getter.Key, indexGetter, getter.Value));
+            var getters = CreateGetters(buffer);
+            var series = new CircularPlotPointSeries<TSource>(buffer, getters, CreateGetters);
+            return source.Select(value =>
+            {
+                buffer.Push(value);
+                return series;
+            });
+        });
+    }
+
+    delegate double ValueGetter<TSource>(ref TSource source);
+}

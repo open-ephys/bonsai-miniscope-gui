@@ -19,7 +19,7 @@ jobs:
             8.0.x
 
       - name: Build
-        run: dotnet build OpenEphys.MiniscopeV4.Gui.sln --configuration Release
+        run: dotnet build OpenEphys.Miniscope.Gui.sln --configuration Release
 
       - name: Bootstrap Bonsai
         shell: pwsh
@@ -28,9 +28,9 @@ jobs:
       - name: Export workflow image
         shell: pwsh
         run: |
-          $lib = Resolve-Path "artifacts\bin\OpenEphys.MiniscopeV4.Gui\release"
-          $workflow = Resolve-Path "OpenEphys.MiniscopeV4.Gui\Workflows\MiniscopeGui.bonsai"
-          $outFile = Join-Path (Get-Location) "MiniscopeGui.png"
+          $lib = Resolve-Path "artifacts\bin\OpenEphys.Miniscope.Gui\release"
+          $workflow = Resolve-Path "OpenEphys.Miniscope.Gui\Workflows\MiniscopeV4Gui.bonsai"
+          $outFile = Join-Path (Get-Location) "MiniscopeV4Gui.png"
 
           & ".bonsai\Bonsai.exe" $workflow "--lib:$lib" --export-image $outFile
 
@@ -42,6 +42,6 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: MiniscopeGui-workflow-image
-          path: MiniscopeGui.png
+          name: MiniscopeV4Gui-workflow-image
+          path: MiniscopeV4Gui.png
           if-no-files-found: ignore

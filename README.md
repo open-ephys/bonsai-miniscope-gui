@@ -1,4 +1,4 @@
-# Open Ephys Miniscope V4 GUI
+# Open Ephys Miniscope GUI
 
 A self-contained ImGui-based graphical interface for configuring and acquiring data from a UCLA
 Miniscope V4 head-borne miniature microscope, including control of an Open Ephys commutator.
@@ -13,7 +13,7 @@ Full hardware and experiment documentation: <https://open-ephys.github.io/minisc
 
 ### As a standalone application
 
-Download the latest `MiniscopeGui-Setup-*.exe` from the [Releases](../../releases) page and run it. The
+Download the latest `MiniscopeV4Gui-Setup-*.exe` from the [Releases](../../releases) page and run it. The
 installer:
 
 - Installs to your user profile (no admin rights required).
@@ -28,8 +28,8 @@ installer:
 
 ### As a Bonsai package
 
-Add the [`OpenEphys.MiniscopeV4.Gui`](https://www.nuget.org/packages/OpenEphys.MiniscopeV4.Gui) package
-through Bonsai's package manager, then drop the `MiniscopeGui.bonsai` workflow into the editor.
+Add the [`OpenEphys.Miniscope.Gui`](https://www.nuget.org/packages/OpenEphys.Miniscope.Gui) package
+through Bonsai's package manager, then drop the `MiniscopeV4Gui.bonsai` workflow into the editor.
 
 > [!NOTE]
 > The GUI is currently in beta, and has not been released on NuGet yet. To download the GUI while
@@ -41,13 +41,13 @@ through Bonsai's package manager, then drop the `MiniscopeGui.bonsai` workflow i
 
 Prerequisites: Visual Studio 2026, and a Windows machine.
 
-1. Clone the repository and open `OpenEphys.MiniscopeV4.Gui.sln`.
+1. Clone the repository and open `OpenEphys.Miniscope.Gui.sln`.
 2. Double-click `.bonsai\Setup.cmd` once. This downloads a copy of Bonsai into `.bonsai\` and restores
    the packages listed in `.bonsai\Bonsai.config`.
 3. Build the solution; this automatically generates a
-   `OpenEphys.MiniscopeV4.Gui\Configuration\Settings.cs` file containing generated classes based on
-   the `OpenEphys.MiniscopeV4.Gui\Configuration\miniscope-config.schema.json` schema.
-4. The main GUI workflow lives at `OpenEphys.MiniscopeV4.Gui\Workflows\MiniscopeGui.bonsai`.
+   `OpenEphys.Miniscope.Gui\Configuration\Settings.cs` file containing generated classes based on
+   the `OpenEphys.Miniscope.Gui\Configuration\miniscope-config.schema.json` schema.
+4. The main GUI workflow lives at `OpenEphys.Miniscope.Gui\Workflows\MiniscopeV4Gui.bonsai`.
 
 ## License
 
