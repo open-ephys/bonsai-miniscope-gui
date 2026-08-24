@@ -76,7 +76,7 @@ jobs:
           & iscc "/DAppVersion=$version" installer\MiniscopeV4Gui.iss
 
       - name: Upload installer artifact
-        if: github.event_name == 'pull_request'
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: MiniscopeV4Gui-Setup-${{ steps.version.outputs.version }}
