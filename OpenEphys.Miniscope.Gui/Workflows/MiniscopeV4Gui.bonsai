@@ -10,6 +10,7 @@
                  xmlns:imviz="clr-namespace:Bonsai.ImGui.Visualizers;assembly=Bonsai.ImGui.Visualizers"
                  xmlns:cv="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision"
                  xmlns:io="clr-namespace:Bonsai.IO;assembly=Bonsai.System"
+                 xmlns:commutator="clr-namespace:OpenEphys.Commutator;assembly=OpenEphys.Commutator"
                  xmlns="https://bonsai-rx.org/2018/workflow">
   <Workflow>
     <Nodes>
@@ -6518,13 +6519,8 @@
                       </Edges>
                     </Workflow>
                   </Expression>
-                  <Expression xsi:type="ExternalizedMapping">
-                    <Property Name="PortName" />
-                    <Property Name="Enable" />
-                    <Property Name="EnableLed" />
-                  </Expression>
                   <Expression xsi:type="rx:SelectMany">
-                    <Name>ResetTwistOnAcquisition</Name>
+                    <Name>TwistGenerator</Name>
                     <Workflow>
                       <Nodes>
                         <Expression xsi:type="SubscribeSubject">
@@ -6543,15 +6539,26 @@
                             <rx:Scheduler>ThreadPoolScheduler</rx:Scheduler>
                           </Combinator>
                         </Expression>
-                        <Expression xsi:type="ExternalizedMapping">
-                          <Property Name="PortName" />
-                          <Property Name="Enable" />
-                          <Property Name="EnableLed" />
+                        <Expression xsi:type="Combinator">
+                          <Combinator xsi:type="rx:SampleInterval">
+                            <rx:Interval>PT0.1S</rx:Interval>
+                          </Combinator>
                         </Expression>
-                        <Expression xsi:type="IncludeWorkflow" Path="OpenEphys.Commutator:AutoCommutator.bonsai">
-                          <PortName>COM3</PortName>
-                          <Enable>true</Enable>
-                          <EnableLed>true</EnableLed>
+                        <Expression xsi:type="Combinator">
+                          <Combinator xsi:type="commutator:QuaternionToTwist">
+                            <commutator:HeadstageAxis>
+                              <commutator:X>0</commutator:X>
+                              <commutator:Y>0</commutator:Y>
+                              <commutator:Z>1</commutator:Z>
+                            </commutator:HeadstageAxis>
+                            <commutator:CommutatorAxis>
+                              <commutator:X>0</commutator:X>
+                              <commutator:Y>0</commutator:Y>
+                              <commutator:Z>1</commutator:Z>
+                            </commutator:CommutatorAxis>
+                            <commutator:FallbackThreshold>-0.9</commutator:FallbackThreshold>
+                            <commutator:FallbackRotation>Global</commutator:FallbackRotation>
+                          </Combinator>
                         </Expression>
                         <Expression xsi:type="SubscribeSubject">
                           <Name>IsAcquiring</Name>
@@ -6580,14 +6587,25 @@
                         <Edge From="0" To="1" Label="Source1" />
                         <Edge From="1" To="2" Label="Source1" />
                         <Edge From="2" To="3" Label="Source1" />
-                        <Edge From="3" To="5" Label="Source1" />
-                        <Edge From="4" To="5" Label="Source2" />
+                        <Edge From="3" To="4" Label="Source1" />
+                        <Edge From="4" To="5" Label="Source1" />
                         <Edge From="5" To="8" Label="Source1" />
                         <Edge From="6" To="7" Label="Source1" />
                         <Edge From="7" To="8" Label="Source2" />
                         <Edge From="8" To="9" Label="Source1" />
                       </Edges>
                     </Workflow>
+                  </Expression>
+                  <Expression xsi:type="ExternalizedMapping">
+                    <Property Name="PortName" />
+                    <Property Name="Enable" />
+                    <Property Name="EnableLed" />
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="commutator:SerialCommutator">
+                      <commutator:Enable>true</commutator:Enable>
+                      <commutator:EnableLed>true</commutator:EnableLed>
+                    </Combinator>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
                     <Name>CommutatorConnected</Name>
@@ -6649,23 +6667,24 @@
                 <Edges>
                   <Edge From="0" To="1" Label="Source1" />
                   <Edge From="1" To="2" Label="Source1" />
-                  <Edge From="2" To="4" Label="Source1" />
-                  <Edge From="3" To="4" Label="Source2" />
-                  <Edge From="4" To="7" Label="Source1" />
-                  <Edge From="5" To="6" Label="Source1" />
-                  <Edge From="6" To="7" Label="Source2" />
-                  <Edge From="7" To="8" Label="Source1" />
+                  <Edge From="2" To="3" Label="Source1" />
+                  <Edge From="3" To="5" Label="Source1" />
+                  <Edge From="4" To="5" Label="Source2" />
+                  <Edge From="5" To="8" Label="Source1" />
+                  <Edge From="6" To="7" Label="Source1" />
+                  <Edge From="7" To="8" Label="Source2" />
                   <Edge From="8" To="9" Label="Source1" />
-                  <Edge From="8" To="13" Label="Source1" />
                   <Edge From="9" To="10" Label="Source1" />
+                  <Edge From="9" To="14" Label="Source1" />
                   <Edge From="10" To="11" Label="Source1" />
                   <Edge From="11" To="12" Label="Source1" />
-                  <Edge From="13" To="14" Label="Source1" />
-                  <Edge From="14" To="16" Label="Source1" />
-                  <Edge From="15" To="16" Label="Source2" />
-                  <Edge From="16" To="17" Label="Source1" />
+                  <Edge From="12" To="13" Label="Source1" />
+                  <Edge From="14" To="15" Label="Source1" />
+                  <Edge From="15" To="17" Label="Source1" />
+                  <Edge From="16" To="17" Label="Source2" />
                   <Edge From="17" To="18" Label="Source1" />
                   <Edge From="18" To="19" Label="Source1" />
+                  <Edge From="19" To="20" Label="Source1" />
                 </Edges>
               </Workflow>
             </Expression>
