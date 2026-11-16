@@ -287,7 +287,9 @@ jobs:
 
       # ----------------------------------------------------------------------- Validate workflow
       # NB: loads the GUI workflow in the environment the installer sets up, so that a workflow naming an unknown type, or
-      # a launcher manifest missing a package the workflow needs, fails here rather than on a user's machine.
+      # a launcher manifest missing a package the workflow needs, fails here rather than on a user's machine. Bonsai loads
+      # a workflow in the environment of the nearest .bonsai folder above it, which for the copy under src/ is the
+      # development environment at the repository root, so a copy is placed beside the launcher, as the installer does.
       - name: Set up launcher environment
         shell: pwsh
         run: launcher/Run.ps1 -BootstrapOnly
@@ -296,7 +298,8 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force artifacts/installer | Out-Null
-          $workflow = Resolve-Path "src/OpenEphys.Miniscope.Gui/Workflows/MiniscopeV4Gui.bonsai"
+          Copy-Item "src/OpenEphys.Miniscope.Gui/Workflows/MiniscopeV4Gui.bonsai" launcher/
+          $workflow = Resolve-Path "launcher/MiniscopeV4Gui.bonsai"
           $image = Join-Path (Get-Location) "artifacts/installer/MiniscopeV4Gui.png"
           & "launcher/.bonsai/Bonsai.exe" $workflow --export-image $image | Out-Default
           if ($LASTEXITCODE -ne 0) {
