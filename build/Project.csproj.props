@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <Nullable>annotations</Nullable>
+
+    <!-- The repository README doubles as the NuGet readme -->
+    <PackageReadmeSourcePath>$(MSBuildThisFileDirectory)../README.md</PackageReadmeSourcePath>
+
+    <!-- Provide Bonsai executable path for use with launchSettings.json -->
+    <BonsaiExecutablePath>$(MSBuildThisFileDirectory)../.bonsai/Bonsai.exe</BonsaiExecutablePath>
+  </PropertyGroup>
+</Project>

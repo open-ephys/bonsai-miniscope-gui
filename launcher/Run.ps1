@@ -48,7 +48,7 @@ if ($BootstrapOnly) {
 
 $WorkflowFile = @(
     (Join-Path $ScriptDir "MiniscopeV4Gui.bonsai"),
-    (Join-Path $ScriptDir "..\OpenEphys.Miniscope.Gui\Workflows\MiniscopeV4Gui.bonsai")
+    (Join-Path $ScriptDir "..\src\OpenEphys.Miniscope.Gui\Workflows\MiniscopeV4Gui.bonsai")
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 
 if (-not $WorkflowFile) {

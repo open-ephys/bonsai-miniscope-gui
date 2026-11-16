@@ -1,0 +1,481 @@
+# =======================================================================================================================================================================
+# OpenEphys.Miniscope.Gui CI/CD
+# =======================================================================================================================================================================
+# Index:
+# * Build, test, and package .NET
+# * Build documentation
+# * Render workflow images
+# * Build installer
+# * Publish packages to GitHub
+# * Publish packages to NuGet.org
+# * Publish documentation
+# =======================================================================================================================================================================
+# Note that this is a generic workflow meant for all Bonsai packages. Minor local modifications are fine, see https://github.com/bonsai-rx/prefect for more information.
+# =======================================================================================================================================================================
+name: OpenEphys.Miniscope.Gui
+on:
+  push:
+    # This prevents tag pushes from triggering this workflow
+    branches: ['**']
+  pull_request:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      publish-documentation:
+        description: "Publish documentation to GitHub Pages?"
+        default: "false"
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_GENERATE_ASPNET_CERTIFICATE: false
+  ContinuousIntegrationBuild: true
+jobs:
+  # =====================================================================================================================================================================
+  # Build, test, and package .NET
+  #  ___      _ _    _     _          _                    _                 _                     _  _ ___ _____
+  # | _ )_  _(_) |__| |   | |_ ___ __| |_     __ _ _ _  __| |  _ __  __ _ __| |____ _ __ _ ___    | \| | __|_   _|
+  # | _ \ || | | / _` |_  |  _/ -_|_-<  _|_  / _` | ' \/ _` | | '_ \/ _` / _| / / _` / _` / -_)  _| .` | _|  | |
+  # |___/\_,_|_|_\__,_( )  \__\___/__/\__( ) \__,_|_||_\__,_| | .__/\__,_\__|_\_\__,_\__, \___| (_)_|\_|___| |_|
+  #                   |/                 |/                   |_|                    |___/
+  # =====================================================================================================================================================================
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: Windows x64
+            os: windows-latest
+            rid: win-x64
+          - name: Linux x64
+            os: ubuntu-22.04
+            rid: linux-x64
+        configuration: ['debug', 'release']
+        include:
+          - platform:
+              rid: win-x64
+            configuration: release
+            collect-packages: true
+    name: ${{matrix.platform.name}} ${{matrix.configuration}}
+    runs-on: ${{matrix.platform.os}}
+    outputs:
+      need-workflow-image-render: ${{steps.configure-build.outputs.need-workflow-image-render}}
+    steps:
+      # ----------------------------------------------------------------------- Checkout
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      # ----------------------------------------------------------------------- Check public API is shipped
+      # NB: a release must move PublicAPI.Unshipped.txt into PublicAPI.Shipped.txt, so that a later change to API
+      # that has been released is caught as a breaking change rather than taken for an edit to new API. A pre-release
+      # is exempt, since its API may still change before the release it leads up to.
+      - name: Check public API is shipped
+        if: github.event_name == 'release' && !github.event.release.prerelease
+        shell: bash
+        run: |
+          unshipped=$(cat src/*/PublicAPI.Unshipped.txt | tr -d '\r' | grep -v -e '^#nullable enable$' -e '^[[:space:]]*$' || true)
+          if [ -n "$unshipped" ]; then
+            echo "::error::PublicAPI.Unshipped.txt still lists API. Move it into PublicAPI.Shipped.txt before releasing."
+            echo "$unshipped"
+            exit 1
+          fi
+
+      # ----------------------------------------------------------------------- Set up tools
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.x
+
+      # ----------------------------------------------------------------------- Configure build
+      - name: Configure build
+        id: configure-build
+        uses: bonsai-rx/configure-build@v2
+
+      # ----------------------------------------------------------------------- Build
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration ${{matrix.configuration}}
+
+      # ----------------------------------------------------------------------- Pack
+      - name: Pack
+        id: pack
+        run: dotnet pack --no-restore --no-build --configuration ${{matrix.configuration}}
+
+      # ----------------------------------------------------------------------- Test
+      # NB: Windows only, since the tests target .NET Framework alone.
+      - name: Test .NET Framework 4.7.2
+        if: matrix.platform.rid == 'win-x64'
+        run: dotnet test --no-restore --no-build --configuration ${{matrix.configuration}} --verbosity normal --framework net472
+
+      # ----------------------------------------------------------------------- Collect artifacts
+      - name: Collect NuGet packages
+        uses: actions/upload-artifact@v7
+        if: matrix.collect-packages && steps.pack.outcome == 'success' && always()
+        with:
+          name: Packages
+          if-no-files-found: error
+          path: artifacts/package/${{matrix.configuration}}/**
+
+  # =====================================================================================================================================================================
+  # Build documentation
+  #  ___      _ _    _      _                            _        _   _
+  # | _ )_  _(_) |__| |  __| |___  __ _  _ _ __  ___ _ _| |_ __ _| |_(_)___ _ _
+  # | _ \ || | | / _` | / _` / _ \/ _| || | '  \/ -_) ' \  _/ _` |  _| / _ \ ' \
+  # |___/\_,_|_|_\__,_| \__,_\___/\__|\_,_|_|_|_\___|_||_\__\__,_|\__|_\___/_||_|
+  # =====================================================================================================================================================================
+  build-documentation:
+    name: Build documentation
+    runs-on: ubuntu-latest
+    steps:
+      # ----------------------------------------------------------------------- Checkout
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      # ----------------------------------------------------------------------- Set up tools
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.x
+
+      - name: Set up .NET tools
+        run: dotnet tool restore
+
+      # ----------------------------------------------------------------------- Configure build
+      - name: Configure build
+        id: configure-build
+        uses: bonsai-rx/configure-build@v2
+
+      # ----------------------------------------------------------------------- Restore
+      - name: Restore
+        run: dotnet restore
+
+      # ----------------------------------------------------------------------- Build
+      # NB: generates Configuration/Settings.cs from its schema, which the design-time build behind docfx metadata skips.
+      - name: Build
+        run: dotnet build --no-restore --configuration release
+
+      # ----------------------------------------------------------------------- Build metadata
+      - name: Build metadata
+        id: build-metadata
+        run: dotnet docfx metadata docs/docfx.json --noRestore
+
+      # ----------------------------------------------------------------------- Build documentation
+      - name: Build documentation
+        id: build-documentation
+        run: dotnet docfx build docs/docfx.json
+
+      # ----------------------------------------------------------------------- Collect artifacts
+      - name: Collect documentation metadata
+        uses: actions/upload-artifact@v7
+        if: steps.build-metadata.outcome == 'success' && always()
+        with:
+          name: DocumentationMetadata
+          if-no-files-found: error
+          path: artifacts/docs/api/
+
+      - name: Collect documentation artifact
+        uses: actions/upload-artifact@v7
+        if: steps.build-documentation.outcome == 'success' && always()
+        with:
+          name: DocumentationWebsite
+          if-no-files-found: error
+          path: artifacts/docs/site/
+
+  # =====================================================================================================================================================================
+  # Render workflow images
+  #  ___             _                          _    __ _              _
+  # | _ \___ _ _  __| |___ _ _  __ __ _____ _ _| |__/ _| |_____ __ __ (_)_ __  __ _ __ _ ___ ___
+  # |   / -_) ' \/ _` / -_) '_| \ V  V / _ \ '_| / /  _| / _ \ V  V / | | '  \/ _` / _` / -_|_-<
+  # |_|_\___|_||_\__,_\___|_|    \_/\_/\___/_| |_\_\_| |_\___/\_/\_/  |_|_|_|_\__,_\__, \___/__/
+  #                                                                                |___/
+  # =====================================================================================================================================================================
+  workflow-images:
+    name: Render workflow images
+    runs-on: windows-latest
+    needs: build
+    if: needs.build.outputs.need-workflow-image-render == 'true'
+    steps:
+      # ----------------------------------------------------------------------- Checkout
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      # ----------------------------------------------------------------------- Download built packages
+      - name: Download packages for rendering
+        uses: actions/download-artifact@v8
+        with:
+          name: Packages
+          path: artifacts/packages/
+
+      # ----------------------------------------------------------------------- Set up Bonsai environments
+      # NB: the root environment only, since launcher/.bonsai/ names a package version that exists only once the installer job
+      # has pinned it.
+      - name: Set up Bonsai environments
+        uses: bonsai-rx/setup-bonsai@v2
+        with:
+          environment-paths: '.bonsai/'
+          inject-packages: artifacts/packages/*.nupkg
+
+      # ----------------------------------------------------------------------- Render
+      - name: Render images
+        id: render
+        run: pwsh ./docs/export-images.ps1 -OutputFolder artifacts/docs/site/ -Verbose
+
+      # ----------------------------------------------------------------------- Collect artifacts
+      - name: Collect images
+        uses: actions/upload-artifact@v7
+        if: steps.render.outcome == 'success' && always()
+        with:
+          name: DocumentationWorkflowImages
+          if-no-files-found: error
+          path: artifacts/docs/site/
+
+  # =====================================================================================================================================================================
+  # Build installer
+  #  ___      _ _    _   _         _        _ _
+  # | _ )_  _(_) |__| | (_)_ _  __| |_ __ _| | |___ _ _
+  # | _ \ || | | / _` | | | ' \(_-<  _/ _` | | / -_) '_|
+  # |___/\_,_|_|_\__,_| |_|_||_/__/\__\__,_|_|_\___|_|
+  # =====================================================================================================================================================================
+  build-installer:
+    name: Build installer
+    runs-on: windows-latest
+    needs: build
+    permissions:
+      # Needed to attach the installer to releases
+      contents: write
+    steps:
+      # ----------------------------------------------------------------------- Checkout
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # ----------------------------------------------------------------------- Download built packages
+      - name: Download built packages
+        uses: actions/download-artifact@v8
+        with:
+          name: Packages
+          path: artifacts/packages/
+
+      # ----------------------------------------------------------------------- Stage package
+      # NB: the launcher's NuGet.config lists launcher/lib/ as a package source, so that the installer bundles the package
+      # built here rather than one from NuGet.org, and its bootstrap manifest is pinned to that package's version.
+      - name: Stage package for launcher
+        id: stage
+        shell: pwsh
+        run: |
+          $package = Get-ChildItem artifacts/packages -Filter 'OpenEphys.Miniscope.Gui.*.nupkg' | Select-Object -First 1
+          if (-not $package) { throw "No OpenEphys.Miniscope.Gui package was built." }
+          $version = $package.BaseName.Substring('OpenEphys.Miniscope.Gui.'.Length)
+          Write-Host "Version: $version"
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+          New-Item -ItemType Directory -Force launcher/lib | Out-Null
+          Copy-Item $package.FullName launcher/lib/
+
+          $configPath = "launcher/.bonsai/Bonsai.config"
+          (Get-Content $configPath) `
+            -replace '(<Package id="OpenEphys\.Miniscope\.Gui" version=")[^"]*(")', "`${1}$version`${2}" `
+            -replace '(location="Packages/OpenEphys\.Miniscope\.Gui\.)[^/]*(/lib/net472/OpenEphys\.Miniscope\.Gui\.dll")', "`${1}$version`${2}" |
+            Set-Content $configPath
+
+      # ----------------------------------------------------------------------- Validate workflow
+      # NB: loads the GUI workflow in the environment the installer sets up, so that a workflow naming an unknown type, or
+      # a launcher manifest missing a package the workflow needs, fails here rather than on a user's machine.
+      - name: Set up launcher environment
+        shell: pwsh
+        run: launcher/Run.ps1 -BootstrapOnly
+
+      - name: Validate workflow
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts/installer | Out-Null
+          $workflow = Resolve-Path "src/OpenEphys.Miniscope.Gui/Workflows/MiniscopeV4Gui.bonsai"
+          $image = Join-Path (Get-Location) "artifacts/installer/MiniscopeV4Gui.png"
+          & "launcher/.bonsai/Bonsai.exe" $workflow --export-image $image | Out-Default
+          if ($LASTEXITCODE -ne 0) {
+            throw "The workflow failed to load (exit $LASTEXITCODE). It likely names a type the launcher environment lacks."
+          }
+
+      # ----------------------------------------------------------------------- Build installer
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Build installer
+        shell: pwsh
+        run: iscc "/DAppVersion=${{steps.stage.outputs.version}}" installer/MiniscopeV4Gui.iss
+
+      # ----------------------------------------------------------------------- Collect artifacts
+      - name: Collect installer
+        uses: actions/upload-artifact@v7
+        with:
+          name: Installer
+          if-no-files-found: error
+          path: artifacts/MiniscopeV4Gui-Setup-*.exe
+
+      - name: Collect workflow image
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: InstallerWorkflowImage
+          if-no-files-found: ignore
+          path: artifacts/installer/
+
+      # ----------------------------------------------------------------------- Upload release assets
+      - name: Upload release assets
+        if: github.event_name == 'release'
+        run: gh release upload --repo ${{github.repository}} ${{github.event.release.tag_name}} (Get-Item artifacts/MiniscopeV4Gui-Setup-*.exe) --clobber
+        env:
+          GH_TOKEN: ${{github.token}}
+
+  # =====================================================================================================================================================================
+  # Publish packages to GitHub
+  #  ___      _    _ _    _                    _                      _          ___ _ _   _  _      _
+  # | _ \_  _| |__| (_)__| |_    _ __  __ _ __| |____ _ __ _ ___ ___ | |_ ___   / __(_) |_| || |_  _| |__
+  # |  _/ || | '_ \ | (_-< ' \  | '_ \/ _` / _| / / _` / _` / -_|_-< |  _/ _ \ | (_ | |  _| __ | || | '_ \
+  # |_|  \_,_|_.__/_|_/__/_||_| | .__/\__,_\__|_\_\__,_\__, \___/__/  \__\___/  \___|_|\__|_||_|\_,_|_.__/
+  #                             |_|                    |___/
+  # =====================================================================================================================================================================
+  publish-github:
+    name: Publish packages to GitHub
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      # Needed to attach files to releases
+      contents: write
+      # Needed to upload to GitHub Packages
+      packages: write
+    if: github.event_name == 'push' || github.event_name == 'release'
+    steps:
+      # ----------------------------------------------------------------------- Set up .NET
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.x
+
+      # ----------------------------------------------------------------------- Download built packages
+      - name: Download built packages
+        uses: actions/download-artifact@v8
+        with:
+          name: Packages
+          path: artifacts/packages/
+
+      # ----------------------------------------------------------------------- Upload release assets
+      - name: Upload release assets
+        if: github.event_name == 'release'
+        run: gh release upload --repo ${{github.repository}} ${{github.event.release.tag_name}} artifacts/packages/* --clobber
+        env:
+          GH_TOKEN: ${{github.token}}
+
+      # ----------------------------------------------------------------------- Push to GitHub Packages
+      - name: Push to GitHub Packages
+        run: dotnet nuget push "artifacts/packages/*.nupkg" --skip-duplicate --no-symbols --api-key ${{secrets.GITHUB_TOKEN}} --source https://nuget.pkg.github.com/${{github.repository_owner}}
+        env:
+          # This is a workaround for https://github.com/NuGet/Home/issues/9775
+          DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER: 0
+
+  # =====================================================================================================================================================================
+  # Publish packages to NuGet.org
+  #  ___      _    _ _    _                    _                      _         _  _       ___     _
+  # | _ \_  _| |__| (_)__| |_    _ __  __ _ __| |____ _ __ _ ___ ___ | |_ ___  | \| |_  _ / __|___| |_   ___ _ _ __ _
+  # |  _/ || | '_ \ | (_-< ' \  | '_ \/ _` / _| / / _` / _` / -_|_-< |  _/ _ \ | .` | || | (_ / -_)  _|_/ _ \ '_/ _` |
+  # |_|  \_,_|_.__/_|_/__/_||_| | .__/\__,_\__|_\_\__,_\__, \___/__/  \__\___/ |_|\_|\_,_|\___\___|\__(_)___/_| \__, |
+  #                             |_|                    |___/                                                    |___/
+  # =====================================================================================================================================================================
+  publish-packages-nuget-org:
+    name: Publish packages to NuGet.org
+    runs-on: ubuntu-latest
+    environment: public-release
+    permissions:
+      # Required by NuGet/login
+      id-token: write
+    # NB: the installer job loads the GUI workflow against the package being published, so a package whose workflow fails
+    # to load is not published.
+    needs: [build, build-installer]
+    if: github.event_name == 'release'
+    steps:
+      # ----------------------------------------------------------------------- Set up .NET
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.x
+
+      # ----------------------------------------------------------------------- Download built packages
+      - name: Download built packages
+        uses: actions/download-artifact@v8
+        with:
+          name: Packages
+          path: artifacts/packages/
+
+      # ----------------------------------------------------------------------- Push to NuGet.org
+      - name: Log in to NuGet.org with OIDC
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: ${{secrets.NUGET_USER}}
+
+      - name: Push to NuGet.org
+        run: dotnet nuget push "artifacts/packages/*.nupkg" --api-key ${{steps.nuget-login.outputs.NUGET_API_KEY}} --source ${{vars.NUGET_API_URL}}
+        env:
+          # This is a workaround for https://github.com/NuGet/Home/issues/9775
+          DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER: 0
+
+
+  # =====================================================================================================================================================================
+  # Publish documentation
+  #  ___      _    _ _    _         _                            _        _   _
+  # | _ \_  _| |__| (_)__| |_    __| |___  __ _  _ _ __  ___ _ _| |_ __ _| |_(_)___ _ _
+  # |  _/ || | '_ \ | (_-< ' \  / _` / _ \/ _| || | '  \/ -_) ' \  _/ _` |  _| / _ \ ' \
+  # |_|  \_,_|_.__/_|_/__/_||_| \__,_\___/\__|\_,_|_|_|_\___|_||_\__\__,_|\__|_\___/_||_|
+  # =====================================================================================================================================================================
+  publish-documentation:
+    name: Publish documentation
+    runs-on: ubuntu-latest
+    # Publishing is not strictly necessary here, but if we're going to do a public release we want to wait to publish the docs until it goes out
+    needs: [build-documentation, workflow-images, publish-packages-nuget-org]
+    permissions:
+      # Both required by actions/deploy-pages
+      pages: write
+      id-token: write
+    environment:
+      # Intentionally not using the "default" github-pages environment as it's not compatible with this workflow
+      name: documentation-website
+      url: ${{steps.publish.outputs.page_url}}
+    # Only run if the workflow isn't dying and build-documentation was successful and either A) we're releasing or B) we have continuous deployment enabled
+    if: |
+      !cancelled() && !failure() && needs.build-documentation.result == 'success'
+      && (github.event_name == 'release'
+        || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish-documentation == 'true')
+        || (vars.CONTINUOUS_DOCUMENTATION && github.event_name != 'pull_request')
+      )
+    steps:
+      # ----------------------------------------------------------------------- Download documentation website components
+      # It is intentional that we use two independent download steps here as it ensures that workflow images are permitted
+      # to overwrite any conflicts in the docfx output but not the other way around.
+      - name: Download documentation website
+        uses: actions/download-artifact@v8
+        with:
+          name: DocumentationWebsite
+
+      - name: Download workflow images
+        if: ${{needs.workflow-images.result == 'success'}}
+        uses: actions/download-artifact@v8
+        with:
+          name: DocumentationWorkflowImages
+
+      # ----------------------------------------------------------------------- Collect artifacts
+      - name: Upload final documentation website artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: '.'
+
+      # ----------------------------------------------------------------------- Publish to GitHub Pages
+      - name: Publish to GitHub Pages
+        id: publish
+        uses: actions/deploy-pages@v5

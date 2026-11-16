@@ -1,0 +1,305 @@
+#nullable enable
+abstract OpenEphys.Miniscope.Gui.ImGuiMiniscopeMashupVisualizer.GetExtensions() -> System.Collections.Generic.IEnumerable<Bonsai.ImGui.IExtensionFactory!>!
+OpenEphys.Miniscope.Gui.CalculateMaxProjection
+OpenEphys.Miniscope.Gui.CalculateMaxProjection.CalculateMaxProjection() -> void
+OpenEphys.Miniscope.Gui.CalculateMaxProjection.Process(System.IObservable<OpenCV.Net.IplImage!>! source, System.IObservable<OpenEphys.Miniscope.Gui.MaxProjectionSettings!>! maxProjectionSettings) -> System.IObservable<OpenCV.Net.IplImage!>!
+OpenEphys.Miniscope.Gui.CameraStatus
+OpenEphys.Miniscope.Gui.CameraStatus.AcquisitionRequested.get -> bool
+OpenEphys.Miniscope.Gui.CameraStatus.AcquisitionRequested.set -> void
+OpenEphys.Miniscope.Gui.CameraStatus.Equals(OpenEphys.Miniscope.Gui.CameraStatus! other) -> bool
+OpenEphys.Miniscope.Gui.CameraStatus.Paused.get -> bool
+OpenEphys.Miniscope.Gui.CameraStatus.Paused.set -> void
+OpenEphys.Miniscope.Gui.CaptureCurrentImage
+OpenEphys.Miniscope.Gui.CaptureCurrentImage.CaptureCurrentImage() -> void
+OpenEphys.Miniscope.Gui.CaptureCurrentImage.FileDataPath.get -> string!
+OpenEphys.Miniscope.Gui.CaptureCurrentImage.FileDataPath.set -> void
+OpenEphys.Miniscope.Gui.CaptureCurrentImage.Process(System.IObservable<OpenEphys.Miniscope.UclaMiniscopeV4Frame!>! source, System.IObservable<OpenEphys.Miniscope.Gui.MiniscopeLog!>! logSource) -> System.IObservable<OpenEphys.Miniscope.UclaMiniscopeV4Frame!>!
+OpenEphys.Miniscope.Gui.CircularBufferBuilder
+OpenEphys.Miniscope.Gui.CircularBufferBuilder.Capacity.get -> int
+OpenEphys.Miniscope.Gui.CircularBufferBuilder.Capacity.set -> void
+OpenEphys.Miniscope.Gui.CircularBufferBuilder.CircularBufferBuilder() -> void
+OpenEphys.Miniscope.Gui.CircularBufferBuilder.IndexSelector.get -> string!
+OpenEphys.Miniscope.Gui.CircularBufferBuilder.IndexSelector.set -> void
+OpenEphys.Miniscope.Gui.CircularBufferBuilder.ValueSelector.get -> string!
+OpenEphys.Miniscope.Gui.CircularBufferBuilder.ValueSelector.set -> void
+OpenEphys.Miniscope.Gui.CircularPlotPointSeries<TSource>
+OpenEphys.Miniscope.Gui.CircularPlotPointSeries<TSource>.Count.get -> int
+OpenEphys.Miniscope.Gui.CircularPlotPointSeries<TSource>.End.get -> int
+OpenEphys.Miniscope.Gui.CircularPlotPointSeries<TSource>.Series.get -> System.ReadOnlySpan<Bonsai.ImGui.Visualizers.NamedPlotPointGetter>
+OpenEphys.Miniscope.Gui.CircularPlotPointSeries<TSource>.Start.get -> int
+OpenEphys.Miniscope.Gui.CommutatorSettings
+OpenEphys.Miniscope.Gui.CommutatorSettings.ConnectionRequested.get -> bool
+OpenEphys.Miniscope.Gui.CommutatorSettings.ConnectionRequested.set -> void
+OpenEphys.Miniscope.Gui.CommutatorSettings.Equals(OpenEphys.Miniscope.Gui.CommutatorSettings! other) -> bool
+OpenEphys.Miniscope.Gui.ConfigurationRequest
+OpenEphys.Miniscope.Gui.ConfigurationRequest.ConfigFilePath.get -> string!
+OpenEphys.Miniscope.Gui.ConfigurationRequest.ConfigFilePath.set -> void
+OpenEphys.Miniscope.Gui.ConfigurationRequest.ConfigurationRequest() -> void
+OpenEphys.Miniscope.Gui.ConfigurationRequest.ConfigurationRequest(OpenEphys.Miniscope.Gui.ConfigurationRequest! other) -> void
+OpenEphys.Miniscope.Gui.ConfigurationRequest.Generate() -> System.IObservable<OpenEphys.Miniscope.Gui.ConfigurationRequest!>!
+OpenEphys.Miniscope.Gui.ConfigurationRequest.Generate<TSource>(System.IObservable<TSource>! source) -> System.IObservable<OpenEphys.Miniscope.Gui.ConfigurationRequest!>!
+OpenEphys.Miniscope.Gui.ConfigurationRequest.RequestType.get -> OpenEphys.Miniscope.Gui.ConfigurationRequestType
+OpenEphys.Miniscope.Gui.ConfigurationRequest.RequestType.set -> void
+OpenEphys.Miniscope.Gui.ConfigurationRequestType
+OpenEphys.Miniscope.Gui.ConfigurationRequestType.AutoLoad = 4 -> OpenEphys.Miniscope.Gui.ConfigurationRequestType
+OpenEphys.Miniscope.Gui.ConfigurationRequestType.AutoSave = 3 -> OpenEphys.Miniscope.Gui.ConfigurationRequestType
+OpenEphys.Miniscope.Gui.ConfigurationRequestType.ManualLoad = 2 -> OpenEphys.Miniscope.Gui.ConfigurationRequestType
+OpenEphys.Miniscope.Gui.ConfigurationRequestType.ManualSave = 1 -> OpenEphys.Miniscope.Gui.ConfigurationRequestType
+OpenEphys.Miniscope.Gui.ConfigurationRequestType.None = 0 -> OpenEphys.Miniscope.Gui.ConfigurationRequestType
+OpenEphys.Miniscope.Gui.ConsolePanel
+OpenEphys.Miniscope.Gui.ConsolePanel.ConsolePanel() -> void
+OpenEphys.Miniscope.Gui.ConsolePanel.Process(System.IObservable<OpenEphys.Miniscope.Gui.GuiLayout!>! source, System.IObservable<OpenEphys.Miniscope.Gui.MiniscopeLog!>! logSource) -> System.IObservable<OpenEphys.Miniscope.Gui.GuiLayout!>!
+OpenEphys.Miniscope.Gui.ControlScheduler
+OpenEphys.Miniscope.Gui.CreateGuiLayout
+OpenEphys.Miniscope.Gui.CreateGuiLayout.CreateGuiLayout() -> void
+OpenEphys.Miniscope.Gui.CreateGuiLayout.Process() -> System.IObservable<OpenEphys.Miniscope.Gui.GuiLayout!>!
+OpenEphys.Miniscope.Gui.CreateMiniscopeLog
+OpenEphys.Miniscope.Gui.CreateMiniscopeLog.CreateMiniscopeLog() -> void
+OpenEphys.Miniscope.Gui.CreateMiniscopeLog.Process() -> System.IObservable<OpenEphys.Miniscope.Gui.MiniscopeLog!>!
+OpenEphys.Miniscope.Gui.DataDisplaySettings
+OpenEphys.Miniscope.Gui.DataDisplaySettings.BufferSize.get -> int
+OpenEphys.Miniscope.Gui.DataDisplaySettings.Equals(OpenEphys.Miniscope.Gui.DataDisplaySettings! other) -> bool
+OpenEphys.Miniscope.Gui.DataPanel
+OpenEphys.Miniscope.Gui.DataPanel.AcquisitionStatus.get -> bool
+OpenEphys.Miniscope.Gui.DataPanel.AcquisitionStatus.set -> void
+OpenEphys.Miniscope.Gui.DataPanel.ActiveImage.get -> Hexa.NET.ImGui.ImTextureRef
+OpenEphys.Miniscope.Gui.DataPanel.ActiveImage.set -> void
+OpenEphys.Miniscope.Gui.DataPanel.AverageFrameRate.get -> double
+OpenEphys.Miniscope.Gui.DataPanel.AverageFrameRate.set -> void
+OpenEphys.Miniscope.Gui.DataPanel.DataDisplaySettings.get -> OpenEphys.Miniscope.Gui.DataDisplaySettings!
+OpenEphys.Miniscope.Gui.DataPanel.DataDisplaySettings.set -> void
+OpenEphys.Miniscope.Gui.DataPanel.DataPanel() -> void
+OpenEphys.Miniscope.Gui.DataPanel.DataPath.get -> string!
+OpenEphys.Miniscope.Gui.DataPanel.DataPath.set -> void
+OpenEphys.Miniscope.Gui.DataPanel.DigitalInSeries.get -> OpenEphys.Miniscope.Gui.CircularPlotPointSeries<System.Tuple<bool, bool>!>!
+OpenEphys.Miniscope.Gui.DataPanel.DigitalInSeries.set -> void
+OpenEphys.Miniscope.Gui.DataPanel.DroppedFrames.get -> int
+OpenEphys.Miniscope.Gui.DataPanel.DroppedFrames.set -> void
+OpenEphys.Miniscope.Gui.DataPanel.EulerAnglesSeries.get -> OpenEphys.Miniscope.Gui.CircularPlotPointSeries<OpenEphys.Miniscope.TaitBryanAngles>!
+OpenEphys.Miniscope.Gui.DataPanel.EulerAnglesSeries.set -> void
+OpenEphys.Miniscope.Gui.DataPanel.FrameNumber.get -> int
+OpenEphys.Miniscope.Gui.DataPanel.FrameNumber.set -> void
+OpenEphys.Miniscope.Gui.DataPanel.ImageHeight.get -> int
+OpenEphys.Miniscope.Gui.DataPanel.ImageHeight.set -> void
+OpenEphys.Miniscope.Gui.DataPanel.ImageHistogram.get -> Bonsai.Vision.ScalarHistogram!
+OpenEphys.Miniscope.Gui.DataPanel.ImageHistogram.set -> void
+OpenEphys.Miniscope.Gui.DataPanel.ImageWidth.get -> int
+OpenEphys.Miniscope.Gui.DataPanel.ImageWidth.set -> void
+OpenEphys.Miniscope.Gui.DataPanel.Paused.get -> bool
+OpenEphys.Miniscope.Gui.DataPanel.Paused.set -> void
+OpenEphys.Miniscope.Gui.DataPanel.Process(System.IObservable<OpenEphys.Miniscope.Gui.GuiLayout!>! source) -> System.IObservable<System.Tuple<OpenEphys.Miniscope.Gui.GuiLayout!, OpenEphys.Miniscope.Gui.DataDisplaySettings!, OpenEphys.Miniscope.Gui.ImageTab>!>!
+OpenEphys.Miniscope.Gui.DataPanel.QuaternionSeries.get -> OpenEphys.Miniscope.Gui.CircularPlotPointSeries<System.Numerics.Quaternion>!
+OpenEphys.Miniscope.Gui.DataPanel.QuaternionSeries.set -> void
+OpenEphys.Miniscope.Gui.DataPanel.SelectedFrameRate.get -> OpenEphys.Miniscope.FrameRateV4
+OpenEphys.Miniscope.Gui.DataPanel.SelectedFrameRate.set -> void
+OpenEphys.Miniscope.Gui.DffSettings
+OpenEphys.Miniscope.Gui.DffSettings.Equals(OpenEphys.Miniscope.Gui.DffSettings! other) -> bool
+OpenEphys.Miniscope.Gui.FilePanel
+OpenEphys.Miniscope.Gui.FilePanel.AcquisitionStatus.get -> bool
+OpenEphys.Miniscope.Gui.FilePanel.AcquisitionStatus.set -> void
+OpenEphys.Miniscope.Gui.FilePanel.FilePanel() -> void
+OpenEphys.Miniscope.Gui.FilePanel.FileSettings.get -> OpenEphys.Miniscope.Gui.FileSettings!
+OpenEphys.Miniscope.Gui.FilePanel.FileSettings.set -> void
+OpenEphys.Miniscope.Gui.FilePanel.IsTotalDurationFinished.get -> bool
+OpenEphys.Miniscope.Gui.FilePanel.IsTotalDurationFinished.set -> void
+OpenEphys.Miniscope.Gui.FilePanel.Process(System.IObservable<System.Tuple<OpenEphys.Miniscope.Gui.GuiLayout!, bool>!>! source) -> System.IObservable<System.Tuple<OpenEphys.Miniscope.Gui.GuiLayout!, OpenEphys.Miniscope.Gui.FileSettings!>!>!
+OpenEphys.Miniscope.Gui.FilePanel.RecordingError.get -> string!
+OpenEphys.Miniscope.Gui.FilePanel.RecordingError.set -> void
+OpenEphys.Miniscope.Gui.FileSettings
+OpenEphys.Miniscope.Gui.FileSettings.Equals(OpenEphys.Miniscope.Gui.FileSettings! other) -> bool
+OpenEphys.Miniscope.Gui.FileSettings.RecordingRequested.get -> bool
+OpenEphys.Miniscope.Gui.FileSettings.RecordingRequested.set -> void
+OpenEphys.Miniscope.Gui.GenerateRecordingFileNames
+OpenEphys.Miniscope.Gui.GenerateRecordingFileNames.FileName.get -> string!
+OpenEphys.Miniscope.Gui.GenerateRecordingFileNames.FileName.set -> void
+OpenEphys.Miniscope.Gui.GenerateRecordingFileNames.GenerateRecordingFileNames() -> void
+OpenEphys.Miniscope.Gui.GenerateRecordingFileNames.Process<TSource>(System.IObservable<TSource>! source) -> System.IObservable<OpenEphys.Miniscope.Gui.RecordingFileNames>!
+OpenEphys.Miniscope.Gui.GenerateRecordingFileNames.Suffix.get -> Bonsai.IO.PathSuffix
+OpenEphys.Miniscope.Gui.GenerateRecordingFileNames.Suffix.set -> void
+OpenEphys.Miniscope.Gui.GuiLayout
+OpenEphys.Miniscope.Gui.GuiLayout.ClampConsoleHeight(float height, float windowHeight) -> float
+OpenEphys.Miniscope.Gui.GuiLayout.ConsoleHeight.get -> float
+OpenEphys.Miniscope.Gui.GuiLayout.ConsoleHeight.init -> void
+OpenEphys.Miniscope.Gui.GuiLayout.ConsoleOpen.get -> bool
+OpenEphys.Miniscope.Gui.GuiLayout.ConsoleOpen.init -> void
+OpenEphys.Miniscope.Gui.GuiLayout.ConsoleSplitterThickness.get -> float
+OpenEphys.Miniscope.Gui.GuiLayout.GuiLayout() -> void
+OpenEphys.Miniscope.Gui.GuiLayout.GuiLayout(bool SidebarOpen, float RecordingSectionHeight, bool ImageExpanded, bool ImageExpandedRequested, float ImagePaneHeight, bool ConsoleOpen, float ConsoleHeight) -> void
+OpenEphys.Miniscope.Gui.GuiLayout.ImageExpanded.get -> bool
+OpenEphys.Miniscope.Gui.GuiLayout.ImageExpanded.init -> void
+OpenEphys.Miniscope.Gui.GuiLayout.ImageExpandedRequested.get -> bool
+OpenEphys.Miniscope.Gui.GuiLayout.ImageExpandedRequested.init -> void
+OpenEphys.Miniscope.Gui.GuiLayout.ImagePaneHeight.get -> float
+OpenEphys.Miniscope.Gui.GuiLayout.ImagePaneHeight.init -> void
+OpenEphys.Miniscope.Gui.GuiLayout.RecordingSectionHeight.get -> float
+OpenEphys.Miniscope.Gui.GuiLayout.RecordingSectionHeight.init -> void
+OpenEphys.Miniscope.Gui.GuiLayout.ReservedConsoleHeight(float itemSpacingY) -> float
+OpenEphys.Miniscope.Gui.GuiLayout.SidebarOpen.get -> bool
+OpenEphys.Miniscope.Gui.GuiLayout.SidebarOpen.init -> void
+OpenEphys.Miniscope.Gui.HardwareSettings
+OpenEphys.Miniscope.Gui.HardwareSettings.Equals(OpenEphys.Miniscope.Gui.HardwareSettings! other) -> bool
+OpenEphys.Miniscope.Gui.ImageTab
+OpenEphys.Miniscope.Gui.ImageTab.Dff = 3 -> OpenEphys.Miniscope.Gui.ImageTab
+OpenEphys.Miniscope.Gui.ImageTab.MaxProjection = 4 -> OpenEphys.Miniscope.Gui.ImageTab
+OpenEphys.Miniscope.Gui.ImageTab.None = 0 -> OpenEphys.Miniscope.Gui.ImageTab
+OpenEphys.Miniscope.Gui.ImageTab.Overlay = 5 -> OpenEphys.Miniscope.Gui.ImageTab
+OpenEphys.Miniscope.Gui.ImageTab.Raw = 1 -> OpenEphys.Miniscope.Gui.ImageTab
+OpenEphys.Miniscope.Gui.ImageTab.Saturation = 2 -> OpenEphys.Miniscope.Gui.ImageTab
+OpenEphys.Miniscope.Gui.ImGuiMiniscopeExtension
+OpenEphys.Miniscope.Gui.ImGuiMiniscopeExtension.Dispose() -> void
+OpenEphys.Miniscope.Gui.ImGuiMiniscopeExtension.ImGuiMiniscopeExtension(Hexa.NET.ImGui.ImGuiContextPtr guiContext) -> void
+OpenEphys.Miniscope.Gui.ImGuiMiniscopeExtension.MakeCurrent(Hexa.NET.ImGui.ImGuiContextPtr guiContext) -> void
+OpenEphys.Miniscope.Gui.ImGuiMiniscopeMashupVisualizer
+OpenEphys.Miniscope.Gui.ImGuiMiniscopeMashupVisualizer.ImGuiMiniscopeMashupVisualizer() -> void
+OpenEphys.Miniscope.Gui.ImGuiMiniscopeMashupVisualizerBuilder
+OpenEphys.Miniscope.Gui.ImGuiMiniscopeMashupVisualizerBuilder.ImGuiMiniscopeMashupVisualizerBuilder() -> void
+OpenEphys.Miniscope.Gui.ImGuiMiniscopeVisualizer
+OpenEphys.Miniscope.Gui.ImGuiMiniscopeVisualizer.ImGuiMiniscopeVisualizer() -> void
+OpenEphys.Miniscope.Gui.ImGuiMiniscopeVisualizerBuilder
+OpenEphys.Miniscope.Gui.ImGuiMiniscopeVisualizerBuilder.ImGuiMiniscopeVisualizerBuilder() -> void
+OpenEphys.Miniscope.Gui.LoadConfiguration
+OpenEphys.Miniscope.Gui.LoadConfiguration.LoadConfiguration() -> void
+OpenEphys.Miniscope.Gui.LoadConfiguration.Process(System.IObservable<OpenEphys.Miniscope.Gui.ConfigurationRequest!>! source, System.IObservable<OpenEphys.Miniscope.Gui.MiniscopeLog!>! logSource) -> System.IObservable<OpenEphys.Miniscope.Gui.MiniscopeConfiguration!>!
+OpenEphys.Miniscope.Gui.LogEntry
+OpenEphys.Miniscope.Gui.LogEntry.FrameNumber.get -> int
+OpenEphys.Miniscope.Gui.LogEntry.FrameNumber.init -> void
+OpenEphys.Miniscope.Gui.LogEntry.Level.get -> OpenEphys.Miniscope.Gui.LogLevel
+OpenEphys.Miniscope.Gui.LogEntry.Level.init -> void
+OpenEphys.Miniscope.Gui.LogEntry.LogEntry() -> void
+OpenEphys.Miniscope.Gui.LogEntry.LogEntry(System.DateTime Timestamp, int FrameNumber, OpenEphys.Miniscope.Gui.LogLevel Level, string! Message) -> void
+OpenEphys.Miniscope.Gui.LogEntry.Message.get -> string!
+OpenEphys.Miniscope.Gui.LogEntry.Message.init -> void
+OpenEphys.Miniscope.Gui.LogEntry.SimpleString() -> string!
+OpenEphys.Miniscope.Gui.LogEntry.Timestamp.get -> System.DateTime
+OpenEphys.Miniscope.Gui.LogEntry.Timestamp.init -> void
+OpenEphys.Miniscope.Gui.LogError
+OpenEphys.Miniscope.Gui.LogError.LogError() -> void
+OpenEphys.Miniscope.Gui.LogError.Process(System.IObservable<System.Tuple<string!, OpenEphys.Miniscope.Gui.MiniscopeLog!>!>! source) -> System.IObservable<System.Tuple<string!, OpenEphys.Miniscope.Gui.MiniscopeLog!>!>!
+OpenEphys.Miniscope.Gui.LogInfo
+OpenEphys.Miniscope.Gui.LogInfo.LogInfo() -> void
+OpenEphys.Miniscope.Gui.LogInfo.Process(System.IObservable<System.Tuple<string!, OpenEphys.Miniscope.Gui.MiniscopeLog!>!>! source) -> System.IObservable<System.Tuple<string!, OpenEphys.Miniscope.Gui.MiniscopeLog!>!>!
+OpenEphys.Miniscope.Gui.LogLevel
+OpenEphys.Miniscope.Gui.LogLevel.Error = 2 -> OpenEphys.Miniscope.Gui.LogLevel
+OpenEphys.Miniscope.Gui.LogLevel.Info = 0 -> OpenEphys.Miniscope.Gui.LogLevel
+OpenEphys.Miniscope.Gui.LogLevel.PropertyChanged = 3 -> OpenEphys.Miniscope.Gui.LogLevel
+OpenEphys.Miniscope.Gui.LogLevel.Warning = 1 -> OpenEphys.Miniscope.Gui.LogLevel
+OpenEphys.Miniscope.Gui.LogPropertyChanged
+OpenEphys.Miniscope.Gui.LogPropertyChanged.LogPropertyChanged() -> void
+OpenEphys.Miniscope.Gui.LogPropertyChanged.Process(System.IObservable<System.Tuple<string!, OpenEphys.Miniscope.Gui.MiniscopeLog!>!>! source) -> System.IObservable<System.Tuple<string!, OpenEphys.Miniscope.Gui.MiniscopeLog!>!>!
+OpenEphys.Miniscope.Gui.LogWarning
+OpenEphys.Miniscope.Gui.LogWarning.LogWarning() -> void
+OpenEphys.Miniscope.Gui.LogWarning.Process(System.IObservable<System.Tuple<string!, OpenEphys.Miniscope.Gui.MiniscopeLog!>!>! source) -> System.IObservable<System.Tuple<string!, OpenEphys.Miniscope.Gui.MiniscopeLog!>!>!
+OpenEphys.Miniscope.Gui.MaxProjectionSettings
+OpenEphys.Miniscope.Gui.MaxProjectionSettings.Equals(OpenEphys.Miniscope.Gui.MaxProjectionSettings! other) -> bool
+OpenEphys.Miniscope.Gui.MaxProjectionSettings.ResetRequested.get -> bool
+OpenEphys.Miniscope.Gui.MaxProjectionSettings.ResetRequested.set -> void
+OpenEphys.Miniscope.Gui.MiniscopeConfiguration
+OpenEphys.Miniscope.Gui.MiniscopeConfiguration.Equals(OpenEphys.Miniscope.Gui.MiniscopeConfiguration! other) -> bool
+OpenEphys.Miniscope.Gui.MiniscopeLog
+OpenEphys.Miniscope.Gui.MiniscopeLog.Clear() -> void
+OpenEphys.Miniscope.Gui.MiniscopeLog.Error(string! message) -> void
+OpenEphys.Miniscope.Gui.MiniscopeLog.Info(string! message) -> void
+OpenEphys.Miniscope.Gui.MiniscopeLog.Log(OpenEphys.Miniscope.Gui.LogLevel level, string! message) -> void
+OpenEphys.Miniscope.Gui.MiniscopeLog.MiniscopeLog() -> void
+OpenEphys.Miniscope.Gui.MiniscopeLog.PropertyChanged(string! message) -> void
+OpenEphys.Miniscope.Gui.MiniscopeLog.Snapshot() -> OpenEphys.Miniscope.Gui.LogEntry[]!
+OpenEphys.Miniscope.Gui.MiniscopeLog.Version.get -> int
+OpenEphys.Miniscope.Gui.MiniscopeLog.Warning(string! message) -> void
+OpenEphys.Miniscope.Gui.MiniscopeSettings
+OpenEphys.Miniscope.Gui.MiniscopeSettings.Equals(OpenEphys.Miniscope.Gui.MiniscopeSettings! other) -> bool
+OpenEphys.Miniscope.Gui.MiniscopeVisualizerClosed
+OpenEphys.Miniscope.Gui.MiniscopeVisualizerClosed.Generate() -> System.IObservable<System.Reactive.Unit>!
+OpenEphys.Miniscope.Gui.MiniscopeVisualizerClosed.MiniscopeVisualizerClosed() -> void
+OpenEphys.Miniscope.Gui.ObserveOnControl
+OpenEphys.Miniscope.Gui.ObserveOnControl.ObserveOnControl() -> void
+OpenEphys.Miniscope.Gui.ObserveOnControl.Process<TSource>(System.IObservable<TSource>! source) -> System.IObservable<TSource>!
+OpenEphys.Miniscope.Gui.ObserveOnRecording
+OpenEphys.Miniscope.Gui.ObserveOnRecording.ObserveOnRecording() -> void
+OpenEphys.Miniscope.Gui.ObserveOnRecording.Process<TSource>(System.IObservable<TSource>! source) -> System.IObservable<TSource>!
+OpenEphys.Miniscope.Gui.OverlayReference
+OpenEphys.Miniscope.Gui.OverlayReference.OverlayReference() -> void
+OpenEphys.Miniscope.Gui.OverlayReference.Process(System.IObservable<System.Tuple<OpenCV.Net.IplImage!, OpenEphys.Miniscope.Gui.OverlaySettings!>!>! source, System.IObservable<OpenEphys.Miniscope.Gui.MiniscopeLog!>! logSource) -> System.IObservable<OpenCV.Net.IplImage!>!
+OpenEphys.Miniscope.Gui.OverlaySettings
+OpenEphys.Miniscope.Gui.OverlaySettings.CaptureRequested.get -> bool
+OpenEphys.Miniscope.Gui.OverlaySettings.CaptureRequested.set -> void
+OpenEphys.Miniscope.Gui.OverlaySettings.Equals(OpenEphys.Miniscope.Gui.OverlaySettings! other) -> bool
+OpenEphys.Miniscope.Gui.RecordingFileNames
+OpenEphys.Miniscope.Gui.RecordingFileNames.ConfigFileName.get -> string!
+OpenEphys.Miniscope.Gui.RecordingFileNames.ConfigFileName.init -> void
+OpenEphys.Miniscope.Gui.RecordingFileNames.CsvFileName.get -> string!
+OpenEphys.Miniscope.Gui.RecordingFileNames.CsvFileName.init -> void
+OpenEphys.Miniscope.Gui.RecordingFileNames.ImageFileName.get -> string!
+OpenEphys.Miniscope.Gui.RecordingFileNames.ImageFileName.init -> void
+OpenEphys.Miniscope.Gui.RecordingFileNames.LogFileName.get -> string!
+OpenEphys.Miniscope.Gui.RecordingFileNames.LogFileName.init -> void
+OpenEphys.Miniscope.Gui.RecordingFileNames.RecordingFileNames() -> void
+OpenEphys.Miniscope.Gui.RecordingFileNames.RecordingFileNames(string! CsvFileName, string! ImageFileName, string! LogFileName, string! ConfigFileName) -> void
+OpenEphys.Miniscope.Gui.RecordingScheduler
+OpenEphys.Miniscope.Gui.SaturationSettings
+OpenEphys.Miniscope.Gui.SaturationSettings.Equals(OpenEphys.Miniscope.Gui.SaturationSettings! other) -> bool
+OpenEphys.Miniscope.Gui.SaveConfiguration
+OpenEphys.Miniscope.Gui.SaveConfiguration.Process(System.IObservable<System.Tuple<OpenEphys.Miniscope.Gui.ConfigurationRequest!, OpenEphys.Miniscope.Gui.MiniscopeConfiguration!>!>! source, System.IObservable<OpenEphys.Miniscope.Gui.MiniscopeLog!>! logSource) -> System.IObservable<string!>!
+OpenEphys.Miniscope.Gui.SaveConfiguration.SaveConfiguration() -> void
+OpenEphys.Miniscope.Gui.SettingsPanel
+OpenEphys.Miniscope.Gui.SettingsPanel.AcquisitionStatus.get -> bool
+OpenEphys.Miniscope.Gui.SettingsPanel.AcquisitionStatus.set -> void
+OpenEphys.Miniscope.Gui.SettingsPanel.HardwareSettings.get -> OpenEphys.Miniscope.Gui.HardwareSettings!
+OpenEphys.Miniscope.Gui.SettingsPanel.HardwareSettings.set -> void
+OpenEphys.Miniscope.Gui.SettingsPanel.Process(System.IObservable<System.Tuple<OpenEphys.Miniscope.Gui.GuiLayout!, bool>!>! source, System.IObservable<OpenEphys.Miniscope.Gui.MiniscopeLog!>! logSource) -> System.IObservable<System.Tuple<OpenEphys.Miniscope.Gui.GuiLayout!, OpenEphys.Miniscope.Gui.HardwareSettings!, OpenEphys.Miniscope.Gui.ConfigurationRequest!>!>!
+OpenEphys.Miniscope.Gui.SettingsPanel.RecordingStatus.get -> bool
+OpenEphys.Miniscope.Gui.SettingsPanel.RecordingStatus.set -> void
+OpenEphys.Miniscope.Gui.SettingsPanel.SettingsPanel() -> void
+OpenEphys.Miniscope.Gui.StatusBar
+OpenEphys.Miniscope.Gui.StatusBar.AutomaticRestartTriggered.get -> bool
+OpenEphys.Miniscope.Gui.StatusBar.AutomaticRestartTriggered.set -> void
+OpenEphys.Miniscope.Gui.StatusBar.CameraStatus.get -> OpenEphys.Miniscope.Gui.CameraStatus!
+OpenEphys.Miniscope.Gui.StatusBar.CameraStatus.set -> void
+OpenEphys.Miniscope.Gui.StatusBar.CommutatorSettings.get -> OpenEphys.Miniscope.Gui.CommutatorSettings!
+OpenEphys.Miniscope.Gui.StatusBar.CommutatorSettings.set -> void
+OpenEphys.Miniscope.Gui.StatusBar.Process(System.IObservable<System.Tuple<OpenEphys.Miniscope.Gui.GuiLayout!, bool>!>! source) -> System.IObservable<System.Tuple<OpenEphys.Miniscope.Gui.GuiLayout!, OpenEphys.Miniscope.Gui.CameraStatus!>!>!
+OpenEphys.Miniscope.Gui.StatusBar.RecordingStatus.get -> bool
+OpenEphys.Miniscope.Gui.StatusBar.RecordingStatus.set -> void
+OpenEphys.Miniscope.Gui.StatusBar.StatusBar() -> void
+OpenEphys.Miniscope.Gui.UpdateLogFrameNumber
+OpenEphys.Miniscope.Gui.UpdateLogFrameNumber.Process(System.IObservable<System.Tuple<int, OpenEphys.Miniscope.Gui.MiniscopeLog!>!>! source) -> System.IObservable<System.Tuple<int, OpenEphys.Miniscope.Gui.MiniscopeLog!>!>!
+OpenEphys.Miniscope.Gui.UpdateLogFrameNumber.UpdateLogFrameNumber() -> void
+OpenEphys.Miniscope.Gui.WriteLogsToFile
+OpenEphys.Miniscope.Gui.WriteLogsToFile.FileName.get -> string!
+OpenEphys.Miniscope.Gui.WriteLogsToFile.FileName.set -> void
+OpenEphys.Miniscope.Gui.WriteLogsToFile.Process<TSource>(System.IObservable<TSource>! source, System.IObservable<OpenEphys.Miniscope.Gui.MiniscopeLog!>! logSource) -> System.IObservable<TSource>!
+OpenEphys.Miniscope.Gui.WriteLogsToFile.WriteLogsToFile() -> void
+override OpenEphys.Miniscope.Gui.CameraStatus.Equals(object! obj) -> bool
+override OpenEphys.Miniscope.Gui.CameraStatus.GetHashCode() -> int
+override OpenEphys.Miniscope.Gui.CircularBufferBuilder.Build(System.Collections.Generic.IEnumerable<System.Linq.Expressions.Expression!>! arguments) -> System.Linq.Expressions.Expression!
+override OpenEphys.Miniscope.Gui.CommutatorSettings.Equals(object! obj) -> bool
+override OpenEphys.Miniscope.Gui.CommutatorSettings.GetHashCode() -> int
+override OpenEphys.Miniscope.Gui.DataDisplaySettings.Equals(object! obj) -> bool
+override OpenEphys.Miniscope.Gui.DataDisplaySettings.GetHashCode() -> int
+override OpenEphys.Miniscope.Gui.DffSettings.Equals(object! obj) -> bool
+override OpenEphys.Miniscope.Gui.DffSettings.GetHashCode() -> int
+override OpenEphys.Miniscope.Gui.FileSettings.Equals(object! obj) -> bool
+override OpenEphys.Miniscope.Gui.FileSettings.GetHashCode() -> int
+override OpenEphys.Miniscope.Gui.HardwareSettings.Equals(object! obj) -> bool
+override OpenEphys.Miniscope.Gui.HardwareSettings.GetHashCode() -> int
+override OpenEphys.Miniscope.Gui.ImGuiMiniscopeMashupVisualizer.Load(System.IServiceProvider! provider) -> void
+override OpenEphys.Miniscope.Gui.ImGuiMiniscopeMashupVisualizer.Show(object! value) -> void
+override OpenEphys.Miniscope.Gui.ImGuiMiniscopeMashupVisualizer.Unload() -> void
+override OpenEphys.Miniscope.Gui.ImGuiMiniscopeMashupVisualizer.Visualize(System.IObservable<System.IObservable<object!>!>! source, System.IServiceProvider! provider) -> System.IObservable<object!>!
+override OpenEphys.Miniscope.Gui.ImGuiMiniscopeMashupVisualizerBuilder.Build(System.Collections.Generic.IEnumerable<System.Linq.Expressions.Expression!>! arguments) -> System.Linq.Expressions.Expression!
+override OpenEphys.Miniscope.Gui.ImGuiMiniscopeVisualizer.GetExtensions() -> System.Collections.Generic.IEnumerable<Bonsai.ImGui.IExtensionFactory!>!
+override OpenEphys.Miniscope.Gui.LogEntry.ToString() -> string!
+override OpenEphys.Miniscope.Gui.MaxProjectionSettings.Equals(object! obj) -> bool
+override OpenEphys.Miniscope.Gui.MaxProjectionSettings.GetHashCode() -> int
+override OpenEphys.Miniscope.Gui.MiniscopeConfiguration.Equals(object! obj) -> bool
+override OpenEphys.Miniscope.Gui.MiniscopeConfiguration.GetHashCode() -> int
+override OpenEphys.Miniscope.Gui.MiniscopeSettings.Equals(object! obj) -> bool
+override OpenEphys.Miniscope.Gui.MiniscopeSettings.GetHashCode() -> int
+override OpenEphys.Miniscope.Gui.OverlaySettings.Equals(object! obj) -> bool
+override OpenEphys.Miniscope.Gui.OverlaySettings.GetHashCode() -> int
+override OpenEphys.Miniscope.Gui.SaturationSettings.Equals(object! obj) -> bool
+override OpenEphys.Miniscope.Gui.SaturationSettings.GetHashCode() -> int
+static OpenEphys.Miniscope.Gui.ImGuiMiniscopeExtension.Factory.get -> Bonsai.ImGui.IExtensionFactory!
+static OpenEphys.Miniscope.Gui.ImGuiMiniscopeMashupVisualizer.Closed.get -> System.IObservable<System.Reactive.Unit>!
+static readonly OpenEphys.Miniscope.Gui.ControlScheduler.Instance -> System.Reactive.Concurrency.EventLoopScheduler!
+static readonly OpenEphys.Miniscope.Gui.RecordingScheduler.Instance -> System.Reactive.Concurrency.EventLoopScheduler!
+virtual OpenEphys.Miniscope.Gui.ImGuiMiniscopeMashupVisualizer.TargetInterval.get -> int

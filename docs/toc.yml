@@ -1,0 +1,4 @@
+- name: API
+  href: ../artifacts/docs/api/
+- name: Miniscope Docs
+  href: https://open-ephys.github.io/miniscope-docs/Software-Guide/index.html

@@ -2,7 +2,7 @@
 ; Requires Inno Setup 6.3+: https://jrsoftware.org/isdl.php
 ;
 ; Build locally:  iscc installer\MiniscopeV4Gui.iss
-; Build in CI:    see .github/workflows/installer.yml
+; Build in CI:    see .github/workflows/OpenEphys.Miniscope.Gui.yml
 
 #define AppName      "Open Ephys Miniscope V4 GUI"
 #define AppDirName   "MiniscopeV4Gui"
@@ -39,7 +39,7 @@ DisableProgramGroupPage=yes
 OutputDir=..\artifacts
 OutputBaseFilename=MiniscopeV4Gui-Setup-{#AppVersion}
 
-SetupIconFile=..\OpenEphys.Miniscope.Gui\Resources\icon.ico
+SetupIconFile=..\src\OpenEphys.Miniscope.Gui\Resources\icon.ico
 WizardStyle=modern
 
 Compression=lzma2/ultra64
@@ -68,10 +68,10 @@ Source: "..\launcher\Run.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\launcher\default_miniscopev4_config.yml"; DestDir: "{app}"; \
   Flags: onlyifdoesntexist uninsneveruninstall
 
-Source: "..\OpenEphys.Miniscope.Gui\Workflows\MiniscopeV4Gui.bonsai"; \
+Source: "..\src\OpenEphys.Miniscope.Gui\Workflows\MiniscopeV4Gui.bonsai"; \
   DestDir: "{app}"; Flags: ignoreversion
 
-Source: "..\OpenEphys.Miniscope.Gui\Workflows\LogProperty.bonsai"; \
+Source: "..\src\OpenEphys.Miniscope.Gui\Workflows\LogProperty.bonsai"; \
   DestDir: "{app}"; Flags: ignoreversion
 
 Source: "..\launcher\.bonsai\Bonsai.config"; DestDir: "{app}\.bonsai"; Flags: ignoreversion
@@ -81,7 +81,7 @@ Source: "..\launcher\.bonsai\NuGet.config";  DestDir: "{app}\.bonsai"; Flags: ig
 Source: "..\launcher\lib\*"; DestDir: "{app}\lib"; Flags: ignoreversion recursesubdirs
 #endif
 
-Source: "..\OpenEphys.Miniscope.Gui\Resources\icon.ico"; \
+Source: "..\src\OpenEphys.Miniscope.Gui\Resources\icon.ico"; \
   DestDir: "{app}"; Flags: ignoreversion
 
 ; ---------------------------------------------------------------------------

@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <PackageTags>Bonsai Rx</PackageTags>
+    <PackageProjectUrl>https://open-ephys.github.io/miniscope-docs/Software-Guide/index.html</PackageProjectUrl>
+
+    <Authors>Open Ephys</Authors>
+    <Copyright>Copyright © Open Ephys and Contributors</Copyright>
+  </PropertyGroup>
+</Project>
