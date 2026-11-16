@@ -42,13 +42,21 @@ if (-not (Test-Path $BonsaiExe)) {
 }
 
 if ($BootstrapOnly) {
-    & $BonsaiExe --no-editor
+    # NB: without a workflow, Bonsai restores the environment of the nearest .bonsai folder above the working
+    # directory, which is not this one when the script is run from inside another environment's tree (such as the
+    # repository root), so the bootstrap runs from the folder holding this environment.
+    Push-Location (Split-Path -Parent $BonsaiDir)
+    try {
+        & $BonsaiExe --no-editor
+    } finally {
+        Pop-Location
+    }
     exit 0
 }
 
 $WorkflowFile = @(
     (Join-Path $ScriptDir "MiniscopeV4Gui.bonsai"),
-    (Join-Path $ScriptDir "..\OpenEphys.Miniscope.Gui\Workflows\MiniscopeV4Gui.bonsai")
+    (Join-Path $ScriptDir "..\src\OpenEphys.Miniscope.Gui\Workflows\MiniscopeV4Gui.bonsai")
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 
 if (-not $WorkflowFile) {
